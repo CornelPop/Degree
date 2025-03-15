@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "317448817455",
+    "project_id": "handcontroller-f59a1",
+    "storage_bucket": "handcontroller-f59a1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317448817455:android:853ea192c4cf7ea3c5afda",
+        "android_client_info": {
+          "package_name": "com.example.hand_controller_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "317448817455-lukj0vfmpq36g2ndbon6jkcubc0e6geh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwsL3XaErHPwhIazbpBPglAPVN4_jD5IM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "317448817455-lukj0vfmpq36g2ndbon6jkcubc0e6geh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "317448817455-ms3kmbqp1vcem7neo1hk9o9dj32iq6r3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.handControllerApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

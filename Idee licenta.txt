@@ -1,0 +1,37 @@
+
+creez aplicatie ca sa gestionez intre modurile de lucru
+
+mana se misca in timp real dupa miscarile mele
+
+mana recunoaste / raspunde la o comanda vocala
+
+mana recunosate / raspunde la o comanda fizica
+
+mana inregistreaza miscarile din intervalul START - STOP si reda la SHOW
+
+mana o sa transmita ca si date si timpul de la tensiune 0 pana la tensiune 100 pentru a simula miscarile mai lente cu acuratete
+
+-------------------------------------------------------------------
+
+reqs:
+
+2 placute ESP32 ()
+
+6 senzori adafruit flex 
+
+5 servo uri mici
+
+https://www.mayoclinic.org/diseases-conditions/arthritis/in-depth/arthritis/art-20546847
+
+-prima problema pe care am intampinat o a fost ca eu trimiteam apeluri pt a lua valorile o data la 0.1 secunde, si cand deconectam senzoru, bara inca se misca, asta inseamnand ca mai erau apeluri, bara inca miscandu se
+
+
+
+
+
+
+
+
+
+
+
