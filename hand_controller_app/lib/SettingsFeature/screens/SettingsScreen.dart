@@ -10,7 +10,7 @@ import '../../AuthFeature/models/User.dart';
 import '../../AuthFeature/services/UserService.dart';
 import '../../AlertDialogs/ExitDialogWidget.dart';
 import '../../GlobalThemeData.dart';
-import '../../ProfileFeature/models/MedicalHistory.dart';
+import '../../ProfileFeature/models/Consultation.dart';
 import '../../ProfileFeature/models/Rating.dart';
 import '../../ProfileFeature/services/ConsultationService.dart';
 import '../../ProfileFeature/services/RatingService.dart';

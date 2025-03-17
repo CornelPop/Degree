@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AlertDialogs/ErrorDialogWidget.dart';
 import 'package:hand_controller_app/AuthFeature/models/Patient.dart';
 import 'package:hand_controller_app/AuthFeature/services/SharedPrefService.dart';
-import 'package:hand_controller_app/ProfileFeature/models/MedicalHistory.dart';
+import 'package:hand_controller_app/ProfileFeature/models/Consultation.dart';
 import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
 import 'package:hand_controller_app/ProfileFeature/services/RatingService.dart';
 import 'package:hand_controller_app/ProfileFeature/widgets/ProfileDoctorContentWidget.dart';
@@ -39,6 +39,7 @@ class _ConsultationDetailsScreenState extends State<ConsultationDetailsScreen> {
 
   final TextEditingController dateController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
   final TextEditingController treatmentPlanController = TextEditingController();
   final TextEditingController notesController = TextEditingController();
 
@@ -47,10 +48,11 @@ class _ConsultationDetailsScreenState extends State<ConsultationDetailsScreen> {
     super.initState();
 
     if (widget.create == false) {
-      dateController.text = widget.consultation.date;
+      dateController.text = widget.consultation.date.toLocal().toString();
       titleController.text = widget.consultation.title;
       treatmentPlanController.text = widget.consultation.treatmentPlan;
       notesController.text = widget.consultation.notes;
+      locationController.text = widget.consultation.location;
     }
   }
 
@@ -234,6 +236,42 @@ class _ConsultationDetailsScreenState extends State<ConsultationDetailsScreen> {
                               ),
                               SizedBox(height: 20),
                               Container(
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      CustomTheme.accentColor4,
+                                      CustomTheme.accentColor2
+                                    ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      // Shadow color
+                                      blurRadius: 20,
+                                      // Blur radius
+                                      offset:
+                                          Offset(0, 0), // Offset of the shadow
+                                    ),
+                                  ],
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: TextFormField(
+                                  controller: locationController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Location',
+                                    prefixIcon:
+                                        Icon(Icons.location_on, color: Colors.white),
+                                    border: InputBorder.none,
+                                    labelStyle: TextStyle(color: Colors.white),
+                                  ),
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              SizedBox(height: 20),
+                              Container(
                                 height: 140,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
@@ -366,17 +404,17 @@ class _ConsultationDetailsScreenState extends State<ConsultationDetailsScreen> {
                                                 consultationId: '',
                                                 doctorId: widget.doctorId,
                                                 patientId: widget.patient.uid,
-                                                date: dateController.text,
+                                                date: DateTime.parse(dateController.text),
                                                 title: titleController.text,
                                                 notes: notesController.text,
-                                                treatmentPlan:
-                                                    treatmentPlanController
-                                                        .text));
+                                                treatmentPlan: treatmentPlanController.text,
+                                                location: ''));
                                       } else {
                                         widget.consultation.title = titleController.text;
-                                        widget.consultation.date = dateController.text;
+                                        widget.consultation.date = dateController.text as DateTime;
                                         widget.consultation.treatmentPlan = treatmentPlanController.text;
                                         widget.consultation.notes = notesController.text;
+                                        //widget.consultation.location =
                                         consultationService.updateConsultation(widget.consultation);
                                       }
                                     }

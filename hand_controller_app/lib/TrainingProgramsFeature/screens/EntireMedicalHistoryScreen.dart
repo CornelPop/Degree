@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/models/Patient.dart';
 import 'package:hand_controller_app/AuthFeature/services/SharedPrefService.dart';
-import 'package:hand_controller_app/ProfileFeature/models/MedicalHistory.dart';
+import 'package:hand_controller_app/ProfileFeature/models/Consultation.dart';
 import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
 import 'package:hand_controller_app/ProfileFeature/services/RatingService.dart';
 import 'package:hand_controller_app/ProfileFeature/widgets/ProfileDoctorContentWidget.dart';

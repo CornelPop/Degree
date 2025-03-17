@@ -1,10 +1,12 @@
 class Exercise {
+  final String exerciseId;
   final String name;
   final String description;
   final int numberOfTimes;
   final Map<String, int> targetValues;
 
   Exercise({
+    required this.exerciseId,
     required this.name,
     required this.description,
     required this.numberOfTimes,
@@ -13,6 +15,7 @@ class Exercise {
 
   Map<String, dynamic> toMap() {
     return {
+      'exerciseId': exerciseId,
       'name': name,
       'description': description,
       'numberOfTimes': numberOfTimes,
@@ -22,6 +25,7 @@ class Exercise {
 
   static Exercise fromMap(Map<String, dynamic> map) {
     return Exercise(
+      exerciseId: map['exerciseId'],
       name: map['name'],
       description: map['description'],
       numberOfTimes: map['numberOfTimes'],

@@ -1,11 +1,6 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/models/Doctor.dart';
 import 'package:hand_controller_app/AuthFeature/models/Patient.dart';
-
-import '../../AuthFeature/services/AuthService.dart';
-import '../../AuthFeature/services/UserService.dart';
 import '../../GlobalThemeData.dart';
 import '../screens/EditProfileScreen.dart';
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/services/PdfService.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/LastMonthTotalNumberByCategoryPieChart.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/DoneProgramContainerWidget.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/services/TrainingProgramService.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import 'package:hand_controller_app/core/widgets/LoadingWidget.dart';
 import '../../AuthFeature/models/Doctor.dart';
@@ -11,7 +12,7 @@ import '../../AuthFeature/services/AuthService.dart';
 import '../../AuthFeature/services/UserService.dart';
 import '../../AlertDialogs/ExitDialogWidget.dart';
 import '../../GlobalThemeData.dart';
-import '../../ProfileFeature/models/MedicalHistory.dart';
+import '../../ProfileFeature/models/Consultation.dart';
 import '../../ProfileFeature/models/Rating.dart';
 import '../../ProfileFeature/services/ConsultationService.dart';
 import '../../ProfileFeature/services/RatingService.dart';
@@ -33,6 +34,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
   final UserService userService = UserService();
   final AuthService authService = AuthService();
   final PdfService pdfService = PdfService();
+  final TrainingProgramService trainingProgramService = TrainingProgramService();
 
   final PageController _pageController = PageController(viewportFraction: 1);
 
@@ -79,7 +81,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
           );
           consultations = consultationsLocal;
 
-          completedPrograms = await userService.getCompletedPrograms(uid);
+          completedPrograms = await trainingProgramService.getCompletedPrograms(uid);
 
           Map<String, dynamic>? assignedDoctorData = await userService.getUserData(userData['doctorId'] as String);
           List<Rating> ratingsLocal = await ratingService.getRatingsByDoctorId(userData['doctorId'] as String);

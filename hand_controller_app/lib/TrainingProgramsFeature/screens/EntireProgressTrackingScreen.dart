@@ -4,6 +4,7 @@ import 'package:hand_controller_app/ProgressTrackingFeature/services/PdfService.
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/LastMonthTotalNumberByCategoryPieChart.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/LastWeekTotalNumberLineChart.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/DoneProgramContainerWidget.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/services/TrainingProgramService.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import '../../AuthFeature/models/Patient.dart';
 import '../../AuthFeature/services/AuthService.dart';
@@ -30,6 +31,7 @@ class _EntireProgressTrackingScreenState
   final UserService userService = UserService();
   final AuthService authService = AuthService();
   final PdfService pdfService = PdfService();
+  final TrainingProgramService trainingProgramService = TrainingProgramService();
 
   List<TrainingProgram> completedPrograms = [];
   String _sortBy = 'Date';
@@ -48,7 +50,7 @@ class _EntireProgressTrackingScreenState
     if (uid != null) {
       Map<String, dynamic>? userData = await userService.getUserData(uid);
       List<TrainingProgram> programs =
-          await userService.getCompletedPrograms(widget.patient.uid);
+          await trainingProgramService.getCompletedPrograms(widget.patient.uid);
       if (userData != null) {
         setState(() async {
           completedPrograms = programs;

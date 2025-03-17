@@ -13,7 +13,7 @@ import '../../AuthFeature/services/AuthService.dart';
 
 import '../../AuthFeature/services/UserService.dart';
 import '../../GlobalThemeData.dart';
-import '../../ProfileFeature/models/MedicalHistory.dart';
+import '../../ProfileFeature/models/Consultation.dart';
 
 class EntireMedicalHistoryContentWidget extends StatefulWidget {
   const EntireMedicalHistoryContentWidget(
@@ -187,7 +187,7 @@ class _EntireMedicalHistoryContentWidgetState
                                             consultationId: '',
                                             treatmentPlan: '',
                                             notes: '',
-                                            date: '',
+                                            date: DateTime.now(), location: '',
                                           ),
                                           create: true,
                                         )));
@@ -266,7 +266,7 @@ class _EntireMedicalHistoryContentWidgetState
                                           ),
                                         ),
                                         Text(
-                                          consultation.date,
+                                          consultation.date.toLocal().toString(),
                                           style: TextStyle(
                                               color: Colors.white, fontSize: 14),
                                         ),
@@ -346,7 +346,7 @@ class _EntireMedicalHistoryContentWidgetState
                                                         0, // Remove elevation
                                                   ),
                                                   child:
-                                                      const Icon(Icons.download)),
+                                                      const Icon(Icons.download, color: Colors.white, size: 20)),
                                             ),
                                             Container(
                                               height: 50,
@@ -397,7 +397,7 @@ class _EntireMedicalHistoryContentWidgetState
                                                     elevation:
                                                         0, // Remove elevation
                                                   ),
-                                                  child: const Icon(Icons.edit)),
+                                                  child: const Icon(Icons.edit, color: Colors.white, size: 20)),
                                             ),
                                             Container(
                                               height: 50,
@@ -444,7 +444,7 @@ class _EntireMedicalHistoryContentWidgetState
                                                         0, // Remove elevation
                                                   ),
                                                   child:
-                                                      const Icon(Icons.delete)),
+                                                      const Icon(Icons.delete, color: Colors.white, size: 20,)),
                                             ),
                                           ],
                                         ),

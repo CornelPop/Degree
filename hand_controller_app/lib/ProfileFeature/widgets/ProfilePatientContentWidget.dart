@@ -11,12 +11,13 @@ import 'package:slide_to_act/slide_to_act.dart';
 import '../../AuthFeature/models/Doctor.dart';
 import '../../AuthFeature/services/UserService.dart';
 import '../../GlobalThemeData.dart';
-import '../models/MedicalHistory.dart';
+import '../models/Consultation.dart';
 
 class ProfilePatientContentWidget extends StatefulWidget {
   const ProfilePatientContentWidget(
       {super.key,
-      required this.consultations,
+      required this.upcomingConsultations,
+      required this.oldConsultations,
       required this.ratings,
       required this.patient,
       required this.assignedDoctor});
@@ -24,7 +25,8 @@ class ProfilePatientContentWidget extends StatefulWidget {
   final Patient patient;
   final Doctor? assignedDoctor;
   final List<Rating> ratings;
-  final List<Consultation> consultations;
+  final List<Consultation> oldConsultations;
+  final List<Consultation> upcomingConsultations;
 
   @override
   _ProfilePatientContentWidgetState createState() =>
@@ -37,7 +39,8 @@ class _ProfilePatientContentWidgetState
   final RatingService ratingService = RatingService();
   final UserService userService = UserService();
 
-  List<bool> _isExpandedList = [];
+  List<bool> _isExpandedListOldConsultations = [];
+  List<bool> _isExpandedListUpcomingConsultations = [];
   bool _isAssignedDoctorTile = false;
   late bool isDoctorAssigned;
 
@@ -189,8 +192,10 @@ class _ProfilePatientContentWidgetState
 
     isDoctorAssigned = widget.assignedDoctor != null;
 
-    _isExpandedList =
-        List.generate(widget.consultations.length, (index) => false);
+    _isExpandedListUpcomingConsultations =
+        List.generate(widget.upcomingConsultations.length, (index) => false);
+    _isExpandedListOldConsultations =
+        List.generate(widget.oldConsultations.length, (index) => false);
   }
 
   @override
@@ -697,13 +702,14 @@ class _ProfilePatientContentWidgetState
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15.0),
-              child: widget.consultations.length != 0
+              child: widget.upcomingConsultations.length != 0
                   ? ListView.builder(
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
-                      itemCount: widget.consultations.length,
+                      itemCount: widget.upcomingConsultations.length,
                       itemBuilder: (context, index) {
-                        final medicalHistory = widget.consultations[index];
+                        final medicalHistory =
+                            widget.upcomingConsultations[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 15),
                           decoration: BoxDecoration(
@@ -717,7 +723,8 @@ class _ProfilePatientContentWidgetState
                               backgroundColor: Colors.transparent,
                               onExpansionChanged: (bool expanded) {
                                 setState(() {
-                                  _isExpandedList[index] = expanded;
+                                  _isExpandedListUpcomingConsultations[index] =
+                                      expanded;
                                 });
                               },
                               title: Text(
@@ -746,7 +753,9 @@ class _ProfilePatientContentWidgetState
                                           ),
                                         ),
                                         Text(
-                                          medicalHistory.date,
+                                          medicalHistory.date
+                                              .toLocal()
+                                              .toString(),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 14),
@@ -782,7 +791,75 @@ class _ProfilePatientContentWidgetState
                                               fontSize: 14),
                                         ),
                                         SizedBox(height: 10),
-                                        CustomSlideAction(),
+                                        medicalHistory.accepted == false
+                                            ? CustomSlideAction(consultation: medicalHistory,)
+                                            : Align(
+                                                alignment: Alignment.center,
+                                                child: Container(
+                                                  width: double.infinity,
+                                                  height: 50,
+                                                  decoration: BoxDecoration(
+                                                    gradient:
+                                                        const LinearGradient(
+                                                      colors: [
+                                                        CustomTheme
+                                                            .accentColor4,
+                                                        CustomTheme
+                                                            .accentColor2,
+                                                      ],
+                                                      begin:
+                                                          Alignment.centerLeft,
+                                                      end:
+                                                          Alignment.centerRight,
+                                                    ),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(0.2),
+                                                        blurRadius: 20,
+                                                        offset: Offset(0, 0),
+                                                      ),
+                                                    ],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            30),
+                                                  ),
+                                                  child: ElevatedButton(
+                                                    onPressed: () async {
+                                                      pdfProfileService
+                                                          .generateAndSavePDFSpecificConsultation(
+                                                              widget
+                                                                  .patient.name,
+                                                              medicalHistory);
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.transparent,
+                                                      shadowColor:
+                                                          Colors.transparent,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(30),
+                                                      ),
+                                                      elevation:
+                                                          0, // Remove elevation
+                                                    ),
+                                                    child: const Text(
+                                                      "Consultation confirmed",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors
+                                                            .white, // Set text color to white
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
                                         SizedBox(height: 10),
                                       ],
                                     ),
@@ -822,13 +899,13 @@ class _ProfilePatientContentWidgetState
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15.0),
-              child: widget.consultations.length != 0
+              child: widget.oldConsultations.length != 0
                   ? ListView.builder(
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
-                      itemCount: widget.consultations.length,
+                      itemCount: widget.oldConsultations.length,
                       itemBuilder: (context, index) {
-                        final medicalHistory = widget.consultations[index];
+                        final medicalHistory = widget.oldConsultations[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 15),
                           decoration: BoxDecoration(
@@ -842,7 +919,8 @@ class _ProfilePatientContentWidgetState
                               backgroundColor: Colors.transparent,
                               onExpansionChanged: (bool expanded) {
                                 setState(() {
-                                  _isExpandedList[index] = expanded;
+                                  _isExpandedListOldConsultations[index] =
+                                      expanded;
                                 });
                               },
                               title: Text(
@@ -871,7 +949,9 @@ class _ProfilePatientContentWidgetState
                                           ),
                                         ),
                                         Text(
-                                          medicalHistory.date,
+                                          medicalHistory.date
+                                              .toLocal()
+                                              .toString(),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 14),

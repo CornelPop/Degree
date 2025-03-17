@@ -26,6 +26,8 @@ https://www.mayoclinic.org/diseases-conditions/arthritis/in-depth/arthritis/art-
 -prima problema pe care am intampinat o a fost ca eu trimiteam apeluri pt a lua valorile o data la 0.1 secunde, si cand deconectam senzoru, bara inca se misca, asta inseamnand ca mai erau apeluri, bara inca miscandu se
 
 
+in firebase folosesc subcolectii pt favorite date rota scalabilitatii si ca un dicumet are maxim 1 mb si daca ai multe, poate aparea o povblema
+
 
 
 

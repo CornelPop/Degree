@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/GlobalThemeData.dart';
-import 'package:hand_controller_app/ProfileFeature/models/MedicalHistory.dart';
+import 'package:hand_controller_app/ProfileFeature/models/Consultation.dart';
 
 
 class DoneMedicalHistoryContainer extends StatelessWidget {
@@ -27,7 +27,7 @@ class DoneMedicalHistoryContainer extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(medicalHistory.title, style: TextStyle(color: Colors.white),),
-            Text(medicalHistory.date, style: TextStyle(color: Colors.white),),
+            Text(medicalHistory.date.toLocal().toString(), style: TextStyle(color: Colors.white),),
             Text(medicalHistory.treatmentPlan, style: TextStyle(color: Colors.white),),
             Text(medicalHistory.notes, style: TextStyle(color: Colors.white),),
           ],

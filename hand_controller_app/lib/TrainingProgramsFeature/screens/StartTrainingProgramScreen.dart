@@ -7,6 +7,7 @@ import 'package:hand_controller_app/TrainingProgramsFeature/widgets/CountdownTim
 import '../../GlobalThemeData.dart';
 import '../../core/widgets/AppBarWidget.dart';
 import '../models/TrainingProgram.dart';
+import '../services/TrainingProgramService.dart';
 
 class StartTrainingProgramScreen extends StatefulWidget {
   final TrainingProgram program;
@@ -27,6 +28,8 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   bool _isExerciseActive = false;
 
   final UserService userService = UserService();
+  final TrainingProgramService trainingProgramService = TrainingProgramService();
+
   int numberBeginnerExercises = 0;
   int numberIntermediateExercises = 0;
   int numberDifficultExercises = 0;
@@ -167,7 +170,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   Future<void> _addTrainingProgramToCompleted(TrainingProgram trainingProgram) async {
     String? uid = await userService.getUserUid();
     if (uid != null) {
-      userService.addCompletedProgram(uid, trainingProgram);
+      trainingProgramService.addCompletedProgram(uid, trainingProgram);
     }
   }
 

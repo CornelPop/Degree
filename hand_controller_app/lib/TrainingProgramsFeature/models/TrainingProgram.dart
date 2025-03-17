@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'Exercise.dart';
 
 class TrainingProgram {
+  final String trainingProgramId;
   final String name;
   final String category;
   final int duration;
@@ -9,6 +10,7 @@ class TrainingProgram {
   final List<Exercise> exercises;
 
   TrainingProgram({
+    required this.trainingProgramId,
     required this.name,
     required this.duration,
     required this.category,
@@ -22,6 +24,7 @@ class TrainingProgram {
 
   Map<String, dynamic> toMap() {
     return {
+      'trainingProgramId': trainingProgramId,
       'name': name,
       'category': category,
       'date': Timestamp.fromDate(date),
@@ -32,6 +35,7 @@ class TrainingProgram {
 
   static TrainingProgram fromMap(Map<String, dynamic> map) {
     return TrainingProgram(
+      trainingProgramId: map['trainingProgramId'],
       name: map['name'],
       category: map['category'],
       date: (map['date'] as Timestamp).toDate(),

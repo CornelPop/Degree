@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../models/MedicalHistory.dart';
+import '../models/Consultation.dart';
 
 class ConsultationService {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -18,6 +17,46 @@ class ConsultationService {
           .toList();
     } catch (e) {
       print("Error getting consultations: $e");
+      return [];
+    }
+  }
+
+  Future<List<Consultation>> getOldConsultationsByPatientIdAndDoctorId(String patientId, String doctorId) async {
+    try {
+      Timestamp now = Timestamp.now();
+
+      QuerySnapshot querySnapshot = await firestore
+          .collection('consultations')
+          .where('patientId', isEqualTo: patientId)
+          .where('doctorId', isEqualTo: doctorId)
+          .where('date', isLessThan: now)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => Consultation.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print("Error getting old consultations: $e");
+      return [];
+    }
+  }
+
+  Future<List<Consultation>> getUpcomingConsultationsByPatientIdAndDoctorId(String patientId, String doctorId) async {
+    try {
+      Timestamp now = Timestamp.now();
+
+      QuerySnapshot querySnapshot = await firestore
+          .collection('consultations')
+          .where('patientId', isEqualTo: patientId)
+          .where('doctorId', isEqualTo: doctorId)
+          .where('date', isGreaterThan: now)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => Consultation.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print("Error getting upcoming consultations: $e");
       return [];
     }
   }
@@ -50,7 +89,7 @@ class ConsultationService {
     }
   }
 
-  Future<void> updateConsultationField(String consultationId, String field, String value) async {
+  Future<void> updateConsultationField(String consultationId, String field, dynamic value) async {
     try {
       await firestore.collection('consultations').doc(consultationId).update({field: value});
     } catch (e) {

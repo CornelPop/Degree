@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:hand_controller_app/ProfileFeature/models/Consultation.dart';
+import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
 import 'package:slide_to_act/slide_to_act.dart';
 
 import '../../GlobalThemeData.dart';
 
 class CustomSlideAction extends StatefulWidget {
+
+  const CustomSlideAction({super.key,
+    required this.consultation});
+
+  final Consultation consultation;
+
   @override
   _CustomSlideActionState createState() => _CustomSlideActionState();
 }
 
 class _CustomSlideActionState extends State<CustomSlideAction> {
-  String text = 'Confirm consultation';
+
+  final ConsultationService consultationService = ConsultationService();
+
+  String text = 'Slide to confirm.';
   bool enabled = true;
   Color iconColor = Colors.white;
   Color outerColor = Colors.transparent;
@@ -39,7 +50,7 @@ class _CustomSlideActionState extends State<CustomSlideAction> {
         borderRadius: BorderRadius.circular(30),
       ),
       child: SlideAction(
-        onSubmit: () {
+        onSubmit: () async {
           setState(() {
             text = 'Consultation confirmed';
             iconColor = Colors.transparent;
@@ -50,6 +61,9 @@ class _CustomSlideActionState extends State<CustomSlideAction> {
             sliderButtonIcon = Icons.check_circle;
             enabled = false;
           });
+
+          await consultationService.updateConsultationField(widget.consultation.consultationId, 'accepted', true);
+
         },
         enabled: enabled,
         elevation: 0,
@@ -70,6 +84,7 @@ class _CustomSlideActionState extends State<CustomSlideAction> {
           Icons.check,
           color: Colors.white,
         ),
+
         text: text,
         textStyle: const TextStyle(
           color: Colors.white,

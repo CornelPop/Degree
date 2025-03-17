@@ -13,6 +13,15 @@ class AppBarWidget extends StatelessWidget {
       surfaceTintColor: Colors.transparent,
       centerTitle: true,
       title: const Text('HandHero', style: TextStyle(color: Colors.white)),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.question_mark,
+            color: Colors.white,
+          ),
+          onPressed: () {},
+        )
+      ],
       leading: Builder(
         builder: (context) {
           return IconButton(

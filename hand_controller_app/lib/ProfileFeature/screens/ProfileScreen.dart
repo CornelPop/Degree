@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/models/Patient.dart';
 import 'package:hand_controller_app/AuthFeature/services/SharedPrefService.dart';
-import 'package:hand_controller_app/ProfileFeature/models/MedicalHistory.dart';
+import 'package:hand_controller_app/ProfileFeature/models/Consultation.dart';
 import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
 import 'package:hand_controller_app/ProfileFeature/services/RatingService.dart';
 import 'package:hand_controller_app/ProfileFeature/widgets/ProfileDoctorContentWidget.dart';
@@ -32,7 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String? role;
 
-  List<Consultation> consultations = [];
+  List<Consultation> oldConsultations = [];
+  List<Consultation> upcomingConsultations = [];
   List<Rating> ratings = [];
 
   Patient? patient;
@@ -60,12 +61,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           patient = Patient.fromMap(userData);
           user = patient;
 
-          List<Consultation> consultationsLocal =
-              await consultationService.getConsultationsByPatientIdAndDoctorId(
+          List<Consultation> oldConsultationsLocal =
+              await consultationService.getOldConsultationsByPatientIdAndDoctorId(
             uid,
             userData['doctorId'] as String,
           );
-          consultations = consultationsLocal;
+          oldConsultations = oldConsultationsLocal;
+
+          List<Consultation> upcomingConsultationsLocal =
+              await consultationService.getUpcomingConsultationsByPatientIdAndDoctorId(
+            uid,
+            userData['doctorId'] as String,
+          );
+          upcomingConsultations = upcomingConsultationsLocal;
+
+          print(oldConsultationsLocal);
+          print(oldConsultations);
+          print(upcomingConsultationsLocal);
+          print(upcomingConsultations);
 
           Map<String, dynamic>? assignedDoctorData =
               await userService.getUserData(userData['doctorId'] as String);
@@ -162,7 +175,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: (role == 'Patient' && patient != null)
                     ? ProfilePatientContentWidget(
-                        consultations: consultations,
+                        oldConsultations: oldConsultations,
+                        upcomingConsultations: upcomingConsultations,
                         ratings: ratings,
                         patient: patient!,
                         assignedDoctor: assignedDoctor,

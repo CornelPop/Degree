@@ -1,0 +1,173 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/TrainingProgram.dart';
+
+class TrainingProgramService {
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  // Get all training programs
+  Future<List<TrainingProgram>> getAllTrainingPrograms() async {
+    try {
+      QuerySnapshot querySnapshot = await firestore.collection('trainingPrograms').get();
+
+      return querySnapshot.docs
+          .map((doc) => TrainingProgram.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print("Error getting training programs: $e");
+      return [];
+    }
+  }
+
+  // Get a training program by ID
+  Future<TrainingProgram?> getTrainingProgramById(String trainingProgramId) async {
+    try {
+      DocumentSnapshot docSnapshot = await firestore.collection('trainingPrograms').doc(trainingProgramId).get();
+
+      if (docSnapshot.exists) {
+        return TrainingProgram.fromMap(docSnapshot.data() as Map<String, dynamic>);
+      } else {
+        print("Training program not found.");
+        return null;
+      }
+    } catch (e) {
+      print("Error getting training program: $e");
+      return null;
+    }
+  }
+
+  // Add a new training program
+  Future<void> addTrainingProgram(TrainingProgram trainingProgram) async {
+    try {
+      DocumentReference docRef = await firestore.collection('trainingPrograms').add(trainingProgram.toMap());
+      await updateTrainingProgramField(docRef.id, 'trainingProgramId', docRef.id);
+    } catch (e) {
+      print("Error adding training program: $e");
+    }
+  }
+
+  Future<void> addFavoriteTrainingProgram(String userId, String trainingProgramId) async {
+    try {
+
+      TrainingProgram? trainingProgram = await getTrainingProgramById(trainingProgramId);
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('favoriteTrainingPrograms')
+          .doc(trainingProgramId)
+          .set(trainingProgram!.toMap());
+    } catch (e) {
+      print("Error adding favorite training program: $e");
+    }
+  }
+
+  Future<void> removeFavoriteTrainingProgram(String userId, String trainingProgramId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('favoriteTrainingPrograms')
+          .doc(trainingProgramId)
+          .delete();
+    } catch (e) {
+      print("Error removing favorite training program: $e");
+    }
+  }
+
+  Future<bool> isFavoriteTrainingProgram(String userId, String trainingProgramId) async {
+    try {
+      var doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('favoriteTrainingPrograms')
+          .doc(trainingProgramId)
+          .get();
+
+      return doc.exists;
+    } catch (e) {
+      print("Error checking favorite training program: $e");
+      return false;
+    }
+  }
+
+  Future<List<String>> getFavoriteTrainingPrograms(String userId) async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('favoriteTrainingPrograms')
+          .get();
+
+      return querySnapshot.docs.map((doc) => doc.id).toList();
+    } catch (e) {
+      print("Error getting favorite training programs: $e");
+      return [];
+    }
+  }
+
+  // Update an existing training program
+  Future<void> updateTrainingProgram(String trainingProgramId, TrainingProgram trainingProgramDetails) async {
+    try {
+      await firestore.collection('trainingPrograms').doc(trainingProgramId).update(trainingProgramDetails.toMap());
+    } catch (e) {
+      print("Error updating training program: $e");
+    }
+  }
+
+  // Delete a training program
+  Future<void> deleteTrainingProgram(String trainingProgramId) async {
+    try {
+      await firestore.collection('trainingPrograms').doc(trainingProgramId).delete();
+      print("Training program with ID: $trainingProgramId deleted successfully.");
+    } catch (e) {
+      print("Error deleting training program: $e");
+    }
+  }
+
+  // Update a specific field of a training program
+  Future<void> updateTrainingProgramField(String trainingProgramId, String field, String value) async {
+    try {
+      await firestore.collection('trainingPrograms').doc(trainingProgramId).update({field: value});
+      print("Updated trainingProgramId field successfully.");
+    } catch (e) {
+      print("Error updating training program field: $e");
+    }
+  }
+
+  Future<void> addCompletedProgram(
+      String userId, TrainingProgram program) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    program.updateDate(DateTime.now());
+
+    try {
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('completedPrograms')
+          .add(program.toMap());
+    } catch (e) {
+      print("Error adding completed program: $e");
+    }
+  }
+
+  Future<List<TrainingProgram>> getCompletedPrograms(String userId) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      QuerySnapshot querySnapshot = await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('completedPrograms')
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) =>
+          TrainingProgram.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print("Error getting completed programs: $e");
+      return [];
+    }
+  }
+}

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hand_controller_app/AuthFeature/models/Doctor.dart';
 import 'package:hand_controller_app/AuthFeature/models/Patient.dart';
-import 'package:hand_controller_app/ProfileFeature/models/MedicalHistory.dart';
+import 'package:hand_controller_app/ProfileFeature/models/Consultation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../ProfileFeature/models/Rating.dart';
@@ -44,43 +44,6 @@ class UserService {
   Future<String?> getUserUid() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('uid');
-  }
-
-  Future<void> addCompletedProgram(
-      String userId, TrainingProgram program) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    program.updateDate(DateTime.now());
-
-    try {
-      await firestore
-          .collection('users')
-          .doc(userId)
-          .collection('completedPrograms')
-          .add(program.toMap());
-    } catch (e) {
-      print("Error adding completed program: $e");
-    }
-  }
-
-  Future<List<TrainingProgram>> getCompletedPrograms(String userId) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    try {
-      QuerySnapshot querySnapshot = await firestore
-          .collection('users')
-          .doc(userId)
-          .collection('completedPrograms')
-          .get();
-
-      return querySnapshot.docs
-          .map((doc) =>
-              TrainingProgram.fromMap(doc.data() as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      print("Error getting completed programs: $e");
-      return [];
-    }
   }
 
   Future<List<dynamic>> getUsersByRoles(List<String> roles) async {

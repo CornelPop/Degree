@@ -7,6 +7,7 @@ import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
 import 'package:hand_controller_app/NotificationFeature/services/NotificationService.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/screens/ProgressTrackingScreen.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/screens/CreateTrainingProgramScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireMedicalHistoryScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireProgressTrackingScreen.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
@@ -404,6 +405,17 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                             NotificationService().scheduleAppointmentNotification(title: 'Salut', body: 'Salut', scheduledNotificationDateTime: scheduleTime);
                           },
                           child: Text("Send noti")
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                const CreateTrainingProgramScreen(),
+                              ),
+                            );
+                            },
+                          child: Text("Create training program")
                       ),
                       const Opacity(
                         opacity: 0.7,
@@ -1211,105 +1223,110 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceAround,
                                       children: [
-                                        Container(
-                                          height: 50,
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                CustomTheme.accentColor4,
-                                                CustomTheme.accentColor2,
-                                              ],
-                                              begin: Alignment.centerLeft,
-                                              end: Alignment.centerRight,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color:
-                                                    Colors.black.withOpacity(0.2),
-                                                blurRadius: 20,
-                                                offset: Offset(0, 0),
+                                        Expanded(
+                                          child: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  CustomTheme.accentColor4,
+                                                  CustomTheme.accentColor2,
+                                                ],
+                                                begin: Alignment.centerLeft,
+                                                end: Alignment.centerRight,
                                               ),
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(30),
-                                          ),
-                                          child: ElevatedButton(
-                                            onPressed: () async {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      EntireMedicalHistoryScreen(
-                                                          patient: patient),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color:
+                                                      Colors.black.withOpacity(0.2),
+                                                  blurRadius: 20,
+                                                  offset: Offset(0, 0),
                                                 ),
-                                              );
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.transparent,
-                                              shadowColor: Colors.transparent,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                              ),
-                                              elevation: 0, // Remove elevation
+                                              ],
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
                                             ),
-                                            child: const Text(
-                                              " Medical History ",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors
-                                                    .white, // Set text color to white
+                                            child: ElevatedButton(
+                                              onPressed: () async {
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        EntireMedicalHistoryScreen(
+                                                            patient: patient),
+                                                  ),
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.transparent,
+                                                shadowColor: Colors.transparent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                ),
+                                                elevation: 0, // Remove elevation
+                                              ),
+                                              child: const Text(
+                                                "Med. History",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors
+                                                      .white, // Set text color to white
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                        Container(
-                                          height: 50,
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                CustomTheme.accentColor4,
-                                                CustomTheme.accentColor2,
+                                        SizedBox(width: 10,),
+                                        Expanded(
+                                          child: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  CustomTheme.accentColor4,
+                                                  CustomTheme.accentColor2,
+                                                ],
+                                                begin: Alignment.centerLeft,
+                                                end: Alignment.centerRight,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color:
+                                                      Colors.black.withOpacity(0.2),
+                                                  blurRadius: 20,
+                                                  offset: Offset(0, 0),
+                                                ),
                                               ],
-                                              begin: Alignment.centerLeft,
-                                              end: Alignment.centerRight,
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
                                             ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color:
-                                                    Colors.black.withOpacity(0.2),
-                                                blurRadius: 20,
-                                                offset: Offset(0, 0),
+                                            child: ElevatedButton(
+                                              onPressed: () async {
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          EntireProgressTrackingScreen(
+                                                              patient: patient)),
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.transparent,
+                                                shadowColor: Colors.transparent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                ),
+                                                elevation: 0, // Remove elevation
                                               ),
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(30),
-                                          ),
-                                          child: ElevatedButton(
-                                            onPressed: () async {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        EntireProgressTrackingScreen(
-                                                            patient: patient)),
-                                              );
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.transparent,
-                                              shadowColor: Colors.transparent,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                              ),
-                                              elevation: 0, // Remove elevation
-                                            ),
-                                            child: const Text(
-                                              "Training Progress",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors
-                                                    .white, // Set text color to white
+                                              child: const Text(
+                                                "Training",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors
+                                                      .white, // Set text color to white
+                                                ),
                                               ),
                                             ),
                                           ),
