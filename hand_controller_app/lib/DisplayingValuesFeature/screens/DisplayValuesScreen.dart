@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
@@ -19,7 +20,7 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
   final UserService userService = UserService();
   final AuthService authService = AuthService();
 
-  final String esp32IpAddress = "http://192.168.69.136";
+  final String esp32IpAddress = "http://192.168.227.136";
   Map<String, int> currentFlexValues = {
     'Thumb': 0,
     'Index': 0,
@@ -106,13 +107,27 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
       final response = await http.get(Uri.parse("$esp32IpAddress/READ_FLEX_SENSOR_VALUES"));
 
       if (response.statusCode == 200) {
-        int flexValue = int.parse(response.body.trim());
+        // int flexValue = int.parse(response.body.trim());
+        //
+        // setState(() {
+        //   currentFlexValues['Index'] = flexValue;
+        // });
 
-        setState(() {
-          currentFlexValues['Index'] = flexValue;
-        });
+        List<String> values = response.body.trim().split(RegExp(r'\s+')); // Splits by any whitespace (spaces, tabs, newlines)
 
-        print("Flex Sensor Value: $flexValue");
+        if (values.length == 5) { // Ensure all 5 values are received
+          setState(() {
+            currentFlexValues = {
+              'Thumb': int.parse(values[0]),
+              'Index': int.parse(values[1]),
+              'Middle': int.parse(values[2]),
+              'Ring': int.parse(values[3]),
+              'Pinky': int.parse(values[4]),
+            };
+          });
+        }
+
+        //print("Flex Sensor Value: $flexValue");
       } else {
         print("Error: ${response.statusCode}");
       }
@@ -122,6 +137,38 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
       isRequestInProgress = false;  // Allow the next request
     }
   }
+
+  // Future<void> readFlexSensor() async {
+  //   if (isRequestInProgress) return; // Prevent new requests if one is still in progress
+  //   isRequestInProgress = true;
+  //
+  //   try {
+  //     final response = await http.get(Uri.parse("$esp32IpAddress/READ_FLEX_SENSOR_VALUES"));
+  //
+  //     if (response.statusCode == 200) {
+  //       final Map<String, dynamic> data = jsonDecode(response.body);
+  //       print(data);
+  //
+  //       setState(() {
+  //         currentFlexValues = {
+  //           'Thumb': data['sensor1'] ?? 0,
+  //           'Index': data['sensor2'] ?? 0,
+  //           'Middle': data['sensor3'] ?? 0,
+  //           'Ring': data['sensor4'] ?? 0,
+  //           'Pinky': data['sensor5'] ?? 0,
+  //         };
+  //       });
+  //
+  //       print("Flex Sensor Values: $currentFlexValues");
+  //     } else {
+  //       print("Error: ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     print("Request failed: $e");
+  //   } finally {
+  //     isRequestInProgress = false; // Allow the next request
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -215,8 +262,8 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
   }
 
   Widget buildProgressBar(String label, int value) {
-    const int minValue = 200;
-    const int maxValue = 850;
+    const int minValue = 1880;
+    const int maxValue = 2800;
 
     double normalizedValue = (value - minValue) / (maxValue - minValue);
     normalizedValue = normalizedValue.clamp(0.0, 1.0);

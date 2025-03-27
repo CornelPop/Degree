@@ -1,0 +1,3 @@
+galben ground
+albastru vcc
+rosu pin

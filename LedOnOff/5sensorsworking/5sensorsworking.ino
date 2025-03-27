@@ -4,8 +4,10 @@ const char* ssid = "Net co";       // WiFi SSID
 const char* password = "C&V43V3R"; // WiFi password
 
 WiFiServer server(80); // Start server on port 80
-const int flexSensorPins[5] = {34, 35, 32, 33, 25}; // Analog pins for flex sensors
-int flexSensorValues[5] = {0}; // Array to store sensor values
+int flexSensorPin = 34; // Analog pin for flex sensor
+int flexSensorValue = 0; // Variable to store sensor value
+
+const int flexSensorPins[5] = {32, 35, 34, 39, 36};
 
 void setup() {
   Serial.begin(115200);
@@ -39,21 +41,21 @@ void loop() {
             // Check if the request path is "/READ_SENSOR_VALUES"
             if (request.indexOf("GET /READ_FLEX_SENSOR_VALUES") >= 0) {
               client.println("HTTP/1.1 200 OK");
-              client.println("Content-Type: application/json");
+              client.println("Content-Type: text/plain");
               client.println();
 
-              // Read all flex sensor values
-              client.print("{");
-              for (int i = 0; i < 5; i++) {
-                flexSensorValues[i] = analogRead(flexSensorPins[i]);
-                client.print("\"sensor");
-                client.print(i + 1);
-                client.print("\": ");
-                client.print(flexSensorValues[i]);
-                if (i < 4) client.print(", ");
+              // Read the flex sensor value
+              //flexSensorValue = analogRead(flexSensorPin);
+              //client.print(flexSensorValue);  // Send the sensor value back to the client
+              //Serial.print("Flex Sensor Value: ");
+              //Serial.println(flexSensorValue);
+
+              for (int i=0; i<5; i++){
+                client.print(analogRead(flexSensorPins[i]));
+                client.print(" ");
               }
-              client.print("}");
-              Serial.println("Flex Sensor Values Sent.");
+              client.println();
+
             } else {
               // If the path doesn't match, return 404
               client.println("HTTP/1.1 404 Not Found");
