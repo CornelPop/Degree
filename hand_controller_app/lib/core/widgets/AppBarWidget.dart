@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../GlobalThemeData.dart';
 
 class AppBarWidget extends StatelessWidget {
-  final IconData? leadingIcon; // Accepts custom leading icon
+  final IconData? leadingIcon;
 
   const AppBarWidget({super.key, this.leadingIcon});
 

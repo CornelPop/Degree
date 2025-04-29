@@ -8,7 +8,7 @@ List<TrainingProgram> getTrainingPrograms() {
     name: 'Fingers Flex',
     description: '',
     numberOfTimes: 10,
-    targetValues: {'Thumb': 600, 'Index': 600, 'Middle': 600, 'Ring': 600, 'Pinky': 600},
+    targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
   );
 
   Exercise exercise2 = Exercise(
@@ -16,7 +16,7 @@ List<TrainingProgram> getTrainingPrograms() {
     name: 'Fingers Relax',
     description: '',
     numberOfTimes: 10,
-    targetValues: {'Thumb': 200, 'Index': 200, 'Middle': 200, 'Ring': 200, 'Pinky': 200},
+    targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
   );
 
   Exercise exercise3 = Exercise(
@@ -24,18 +24,20 @@ List<TrainingProgram> getTrainingPrograms() {
     name: 'Index middle up',
     description: '',
     numberOfTimes: 10,
-    targetValues: {'Thumb': 200, 'Index': 200, 'Middle': 200, 'Ring': 200, 'Pinky': 200},
+    targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
   );
 
   DateTime now = DateTime.now();
 
   TrainingProgram program1 = TrainingProgram(
+    createdById: '',
     trainingProgramId: '',
     name: 'Beginner Program',
     duration: 10,
-    exercises: [exercise1, exercise2, exercise3, exercise1, exercise2, exercise3, exercise1, exercise2, exercise3, exercise1, exercise2, exercise3, ],
+    exercises: [exercise1, ],
     category: 'Beginner',
     date: now,
+    createdAt: now
   );
 
   TrainingProgram program2 = TrainingProgram(
@@ -44,6 +46,8 @@ List<TrainingProgram> getTrainingPrograms() {
     category: 'Beginner',
     duration: 10,
     date: now,
+    createdAt: now,
+    createdById: '',
     exercises: [exercise1, exercise1, exercise1, exercise1],
   );
 
@@ -52,6 +56,8 @@ List<TrainingProgram> getTrainingPrograms() {
     name: 'Intermediate Program',
     category: 'Intermediate',
     duration: 15,
+    createdAt: now,
+    createdById: '',
     date: now,
     exercises: [exercise1, exercise2, exercise1, exercise2],
   );
@@ -61,6 +67,8 @@ List<TrainingProgram> getTrainingPrograms() {
     name: 'Intermediate Program',
     category: 'Intermediate',
     duration: 15,
+    createdAt: now,
+    createdById: '',
     date: now,
     exercises: [exercise1, exercise2, exercise1, exercise2],
   );
@@ -70,6 +78,8 @@ List<TrainingProgram> getTrainingPrograms() {
     name: 'Difficult Program',
     category: 'Difficult',
     duration: 20,
+    createdAt: now,
+    createdById: '',
     date: now,
     exercises: [exercise1, exercise2, exercise1, exercise2, exercise1, exercise2],
   );
@@ -79,6 +89,8 @@ List<TrainingProgram> getTrainingPrograms() {
     name: 'Difficult Program',
     category: 'Difficult',
     duration: 20,
+    createdAt: now,
+    createdById: '',
     date: now,
     exercises: [exercise1, exercise2, exercise1, exercise2, exercise1, exercise2],
   );

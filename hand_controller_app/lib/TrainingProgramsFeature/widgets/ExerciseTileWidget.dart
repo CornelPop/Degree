@@ -5,8 +5,10 @@ import '../models/Exercise.dart';
 
 class ExerciseTileWidget extends StatefulWidget {
   final Exercise exercise;
+  final void Function(Exercise exercise, int repetitions) onAddExercise;
 
-  const ExerciseTileWidget({Key? key, required this.exercise})
+
+  const ExerciseTileWidget({Key? key, required this.exercise, required this.onAddExercise})
       : super(key: key);
 
   @override
@@ -14,7 +16,7 @@ class ExerciseTileWidget extends StatefulWidget {
 }
 
 class _ExerciseTileWidgetState extends State<ExerciseTileWidget> {
-  int repetitions = 1; // Default repetitions
+  int repetitions = 1;
 
   void _increaseReps() {
     setState(() {
@@ -32,56 +34,51 @@ class _ExerciseTileWidgetState extends State<ExerciseTileWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+    return ExpansionTile(
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(0),
       ),
-      child: ExpansionTile(
-        backgroundColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(0),
-        ),
-        title: Text(
-          widget.exercise.name,
-          style: const TextStyle(color: Colors.white),
-        ),
-        leading: Icon(Icons.expand_more, color: Colors.white,),
-        trailing: IconButton(
-          onPressed: () {
-            print('Exercise added to program!');
-          },
-          icon: Icon(
-            Icons.add_circle,
-            color: Colors.white,
-          ),
-        ),
-        children: [
-          Row(
-            children: [
-              const SizedBox(
-                width: 16,
-              ),
-              const Text(
-                'Repetitions:',
-                style: TextStyle(color: Colors.white),
-              ),
-              IconButton(
-                icon: const Icon(Icons.remove, color: Colors.white),
-                onPressed: _decreaseReps,
-              ),
-              Text(
-                '$repetitions', // Display repetitions
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add, color: Colors.white),
-                onPressed: _increaseReps,
-              ),
-            ],
-          ),
-        ],
+      title: Text(
+        widget.exercise.name,
+        style: const TextStyle(color: Colors.white),
       ),
+      leading: Icon(Icons.expand_more, color: Colors.white,),
+      trailing: IconButton(
+        onPressed: () {
+          widget.onAddExercise(widget.exercise, repetitions);
+          print('Exercise added to program!');
+        },
+        icon: Icon(
+          Icons.add_circle,
+          color: Colors.white,
+        ),
+      ),
+      children: [
+        Row(
+          children: [
+            const SizedBox(
+              width: 16,
+            ),
+            const Text(
+              'Repetitions:',
+              style: TextStyle(color: Colors.white),
+            ),
+            IconButton(
+              icon: const Icon(Icons.remove, color: Colors.white),
+              onPressed: _decreaseReps,
+            ),
+            Text(
+              '$repetitions', // Display repetitions
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white),
+              onPressed: _increaseReps,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:hand_controller_app/AlertDialogs/ErrorDialogWidget.dart';
 import 'package:hand_controller_app/AuthFeature/screens/SignInScreen.dart';
 import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/models/Exercise.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/screens/ReviewTrainingProgramScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/services/ExerciseService.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/services/TrainingProgramService.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/widgets/ExerciseTileWidget.dart';
@@ -39,7 +41,6 @@ class CreateTrainingProgramScreenState
       TrainingProgramService();
   final ExerciseService exerciseService = ExerciseService();
 
-
   TextEditingController searchController = TextEditingController();
 
   final List<int> _items = List<int>.generate(50, (int index) => index);
@@ -48,8 +49,8 @@ class CreateTrainingProgramScreenState
   late List<Exercise> filteredExercises;
 
   List<TrainingProgram> completedPrograms = [];
-  String _sortBy = 'Date';
-  bool _ascending = false;
+
+  List<Exercise> trainingProgramExercises = [];
 
   late Future<void> _fetchUserDataFuture;
 
@@ -67,18 +68,17 @@ class CreateTrainingProgramScreenState
 
   User? user;
 
-
   String _searchedString = '';
 
   void _filterBySearchField(String query) {
     setState(() {
-      filteredExercises = programs[0].exercises
+      filteredExercises = programs[0]
+          .exercises
           .where((exercise) =>
-          exercise.name.toLowerCase().contains(query.toLowerCase()))
+              exercise.name.toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
   }
-
 
   @override
   void initState() {
@@ -136,10 +136,7 @@ class CreateTrainingProgramScreenState
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                CustomTheme.mainColor2,
-                CustomTheme.mainColor
-              ],
+              colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -179,12 +176,23 @@ class CreateTrainingProgramScreenState
                     elevation: 0,
                   ),
                   onPressed: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => StartTrainingProgramScreen(program: widget.program),
-                    //   ),
-                    // );
+                    if (trainingProgramExercises.length < 5) {
+                      ErrorDialogWidget(
+                          message: 'You need to add at least 5 exercises. Until now you have ${trainingProgramExercises.length}:\n'
+                              '${trainingProgramExercises.map((e) => e.name).join("\n")}'
+                      ).showErrorDialog(context);
+
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReviewTrainingProgramScreen(
+                            trainingProgramExercises: trainingProgramExercises,
+                            userId: user!.uid,
+                          ),
+                        ),
+                      );
+                    }
                   },
                   child: const Text(
                     'Review Program',
@@ -252,7 +260,9 @@ class CreateTrainingProgramScreenState
             ),
             Column(
               children: [
-                AppBarWidget(), // Ensures AppBar stays in place
+                AppBarWidget(
+                  leadingIcon: Icons.arrow_back,
+                ),
               ],
             ),
           ],
@@ -324,81 +334,48 @@ class CreateTrainingProgramScreenState
                     shrinkWrap: true,
                     itemCount: filteredExercises.length,
                     itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      return Container(
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        color: Colors.white.withOpacity(0.1),
+                        key: Key('$index'),
                         child: Slidable(
-                          key: Key('$index'),
-                          endActionPane: ActionPane(
-                            extentRatio: 0.35,
-                            motion: StretchMotion(),
-                            children: [
-                              SlidableAction(
-                                onPressed: ((context) {}),
-                                icon: Icons.favorite,
-                                backgroundColor: Colors.teal,
-                                foregroundColor: Colors.white,
-                                label: 'Favorite',
-                              ),
-                            ],
-                          ),
-                          child: ExerciseTileWidget(exercise: filteredExercises[index])
-                        ),
+                            //key: Key('$index'),
+                            endActionPane: ActionPane(
+                              extentRatio: 0.35,
+                              motion: StretchMotion(),
+                              children: [
+                                SlidableAction(
+                                  onPressed: ((context) {}),
+                                  icon: Icons.favorite,
+                                  backgroundColor: Colors.yellow.shade700,
+                                  foregroundColor: Colors.white,
+                                  label: 'Favorite',
+                                ),
+                              ],
+                            ),
+                            child: ExerciseTileWidget(
+                              exercise: filteredExercises[index],
+                              onAddExercise: (exercise, repetitions) {
+                                setState(() {
+                                  trainingProgramExercises.add(
+                                    Exercise(
+                                      exerciseId: exercise.exerciseId,
+                                      name: exercise.name,
+                                      description: exercise.description,
+                                      numberOfTimes: repetitions,
+                                      targetValues: exercise.targetValues,
+                                    ),
+                                  );
+                                });
+
+                                print(
+                                    'Added ${exercise.name} with $repetitions reps!');
+                                print(trainingProgramExercises);
+                              },
+                            )),
                       );
                     },
                   ),
-                  //   Expanded(
-                  //   child: ReorderableListView.builder(
-                  //     physics: BouncingScrollPhysics(),
-                  //     itemCount: programs[0].exercises.length,
-                  //     itemBuilder: (context, index) {
-                  //       return Slidable(
-                  //         key: Key('$index'),
-                  //         endActionPane: ActionPane(
-                  //           motion: StretchMotion(),
-                  //           children: [
-                  //             SlidableAction(
-                  //               onPressed: ((context) {}),
-                  //               icon: Icons.star,
-                  //               backgroundColor: Colors.yellow,
-                  //             ),
-                  //           ],
-                  //         ),
-                  //         startActionPane: ActionPane(
-                  //           motion: StretchMotion(),
-                  //           children: [
-                  //             SlidableAction(
-                  //               onPressed: ((context) {}),
-                  //               icon: Icons.add,
-                  //               backgroundColor: Colors.green,
-                  //             ),
-                  //             SlidableAction(
-                  //               onPressed: ((context) {}),
-                  //               icon: Icons.mic,
-                  //               backgroundColor: Colors.blue,
-                  //             ),
-                  //           ],
-                  //         ),
-                  //         child: ListTile(
-                  //           tileColor: CustomTheme.accentColor2,
-                  //           title: Text(
-                  //             'Exercise: ${programs[0].exercises[index].name}',
-                  //             style: const TextStyle(color: Colors.white),
-                  //           ),
-                  //           trailing: ReorderableDragStartListener(
-                  //             index: index,
-                  //             child: const Icon(
-                  //               Icons.drag_handle,
-                  //               color: Colors.white,
-                  //             ),
-                  //           ),
-                  //           selected: false,
-                  //         ),
-                  //       );
-                  //     },
-                  //     onReorder: (oldIndex, newIndex) =>
-                  //         updateItems(oldIndex, newIndex),
-                  //   ),
-                  // ),
                 ]),
               ),
             ),
@@ -406,15 +383,5 @@ class CreateTrainingProgramScreenState
         ),
       ],
     );
-  }
-
-  void updateItems(int oldIndex, int newIndex) {
-    setState(() {
-      if (oldIndex < newIndex) {
-        newIndex--;
-      }
-      final int item = _items.removeAt(oldIndex); // Correct removal
-      _items.insert(newIndex, item); // Correct insertion
-    });
   }
 }

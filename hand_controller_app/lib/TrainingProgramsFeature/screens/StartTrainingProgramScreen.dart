@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/TrainingProgramScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/widgets/CountdownTimerWidget.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/widgets/ProgressBarWidget.dart';
+import 'package:http/http.dart' as http;
 
 import '../../GlobalThemeData.dart';
 import '../../core/widgets/AppBarWidget.dart';
@@ -20,6 +22,7 @@ class StartTrainingProgramScreen extends StatefulWidget {
 
 class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen> with TickerProviderStateMixin {
   Timer? _countdownTimer;
+  Timer? _flexReadingTimer;
   final Stopwatch _stopwatchEntireProgram = Stopwatch();
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -35,6 +38,22 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   int numberDifficultExercises = 0;
   int timeSpentInWorkouts = 0;
 
+  String flexSensorValue = '';
+  bool isRequestInProgress = false;
+  final String esp32IpAddress = "http://192.168.217.136";
+  Map<String, int> currentFlexValues = {
+    'Thumb': 0,
+    'Index': 0,
+    'Middle': 0,
+    'Ring': 0,
+    'Pinky': 0,
+  };
+
+  Map<String, dynamic> precisions = {
+    'overallPrecision': 0.0,
+    'fingerPrecisions': {},
+  };
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +67,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
 
   @override
   void dispose() {
-    _cancelExistingTimer();
+    _cancelExistingTimers();
     _animationController.dispose();
     super.dispose();
   }
@@ -62,23 +81,89 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   }
 
   void _startCountdown() {
-    _cancelExistingTimer();
+    _cancelExistingTimers();
     _animationController.reset();
     _animationController.forward();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _currentTime--;
         if (_currentTime == 0) {
-          _cancelExistingTimer();
+          _cancelExistingTimers();
           _startExercise();
         }
       });
     });
   }
 
-  void _cancelExistingTimer() {
+  void _cancelExistingTimers() {
     _countdownTimer?.cancel();
+    _flexReadingTimer?.cancel();
   }
+
+  Future<Map<String, int>?> readFlexSensor() async {
+    if (isRequestInProgress) return null;
+    isRequestInProgress = true;
+
+    try {
+      final response = await http.get(Uri.parse("$esp32IpAddress/READ_FLEX_SENSOR_VALUES"));
+
+      if (response.statusCode == 200) {
+        List<String> values = response.body.trim().split(RegExp(r'\s+'));
+        print(values);
+        if (values.length == 5) {
+          Map<String, int> flexValues = {
+            'Thumb': int.parse(values[0]),
+            'Index': int.parse(values[1]),
+            'Middle': int.parse(values[2]),
+            'Ring': int.parse(values[3]),
+            'Pinky': int.parse(values[4]),
+          };
+
+          setState(() {
+            currentFlexValues = flexValues;
+          });
+
+          return flexValues;
+        }
+      } else {
+        print("Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Request failed: $e");
+    } finally {
+      isRequestInProgress = false;
+    }
+
+    return null;
+  }
+
+
+  Map<String, dynamic> calculatePrecisions(Map<String, int> targetValues, Map<String, int> userValues) {
+    Map<String, double> fingerPrecisions = {};
+    double totalPrecision = 0;
+    int count = 0;
+
+    targetValues.forEach((finger, target) {
+      int actual = userValues[finger] ?? 0;
+
+      // Calculate precision based on the ratio, adjusted to the range 1800-2800
+      double ratio = (actual - 1800) / (target - 1800);
+      double precision = 100 - ((ratio - 1).abs() * 100);
+      precision = precision.clamp(0.0, 100.0);
+
+      fingerPrecisions[finger] = precision;
+      totalPrecision += precision;
+      count++;
+    });
+
+    double overallPrecision = count == 0 ? 0 : totalPrecision / count;
+
+    return {
+      "overallPrecision": overallPrecision,
+      "fingerPrecisions": fingerPrecisions,
+    };
+  }
+
 
   void _startExercise() {
     if (_isExerciseActive) return;
@@ -96,47 +181,125 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
       _startEntireProgramStopWatch();
     }
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _currentTime--;
-        if (_currentTime == 0) {
-          _cancelExistingTimer();
-          _isExerciseActive = false;
+    _flexReadingTimer?.cancel();
 
-          if (_currentExerciseIndex < widget.program.exercises.length - 1) {
-            _startExercise();
-          } else {
-            _endEntireProgramStopWatch();
-            _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
-            _showCompletionDialog();
+    _flexReadingTimer = Timer.periodic(const Duration(milliseconds: 250), (timer) {
+      if (mounted) {
+        readFlexSensor();
+      } else {
+        timer.cancel();
+        _flexReadingTimer = null;
+      }
+    });
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentTime--;
+
+          if (_currentTime == 0) {
+            _cancelExistingTimers();
+            _isExerciseActive = false;
+
+            Map<String, int> targetValues =
+                widget.program.exercises[_currentExerciseIndex].targetValues;
+
+            Map<String, int> userValues = Map<String, int>.from(currentFlexValues); // Use latest values
+
+            precisions = calculatePrecisions(targetValues, userValues);
+
+            print("Exercise ${_currentExerciseIndex + 1} - Overall Precision: ${precisions['overallPrecision']}%");
+            print("Finger Precisions: ${precisions['fingerPrecisions']}");
+
+            if (_currentExerciseIndex < widget.program.exercises.length - 1) {
+              _startExercise();
+            } else {
+              _endEntireProgramStopWatch();
+              _cancelExistingTimers();
+              _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
+              _showCompletionDialog();
+            }
           }
-        }
-      });
+        });
+      }
     });
   }
 
   void _showCompletionDialog() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text("Program Completed"),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        content: const Text("Congratulations! You have completed the program."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
-                    (Route<dynamic> route) => false,
-              );
-            },
-            child: const Text("OK"),
+      builder: (context) {
+        final screenHeight = MediaQuery.of(context).size.height;
+        final screenWidth = MediaQuery.of(context).size.width;
+
+        return AlertDialog(
+          title: const Text("Program Completed"),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
           ),
-        ],
-      ),
+          content: Container(
+            width: screenWidth * 0.8,
+            height: screenHeight * 0.4,
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Congratulations! You have completed the program."),
+                    const SizedBox(height: 20),
+                    ProgressBarWidget(
+                      percentage: precisions['overallPrecision'],
+                      text: 'Accuracy for this program',
+                      rounded: true,
+                    ),
+                    ProgressBarWidget(
+                      percentage: precisions['fingerPrecisions']['Thumb'],
+                      text: 'Thumb',
+                      rounded: false,
+                    ),
+                    ProgressBarWidget(
+                      percentage: precisions['fingerPrecisions']['Index'],
+                      text: 'Index',
+                      rounded: false,
+                    ),
+                    ProgressBarWidget(
+                      percentage: precisions['fingerPrecisions']['Middle'],
+                      text: 'Middle',
+                      rounded: false,
+                    ),
+                    ProgressBarWidget(
+                      percentage: precisions['fingerPrecisions']['Ring'],
+                      text: 'Ring',
+                      rounded: false,
+                    ),
+                    ProgressBarWidget(
+                      percentage: precisions['fingerPrecisions']['Pinky'],
+                      text: 'Pinky',
+                      rounded: false,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const TrainingProgramScreen()),
+                      (Route<dynamic> route) => false,
+                );
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -254,7 +417,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                           ),
                           child: ElevatedButton(
                             onPressed: () {
-                              _cancelExistingTimer();
+                              _cancelExistingTimers();
                               if (_currentExerciseIndex < widget.program.exercises.length - 1) {
                                 _isExerciseActive = false;
                                 _startExercise();
@@ -262,6 +425,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                                 _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
                                 _addTrainingProgramToCompleted(widget.program);
                                 _showCompletionDialog();
+                                _cancelExistingTimers();
                               }
                             },
                             style: ElevatedButton.styleFrom(

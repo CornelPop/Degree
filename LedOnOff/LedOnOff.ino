@@ -1,7 +1,7 @@
 #include <WiFi.h>
 
 const char* ssid = "Net co";       // WiFi SSID
-const char* password = "C&V43V3R"; // WiFi password
+const char* password = "C0&V14EVER"; // WiFi password
 
 WiFiServer server(80); // Start server on port 80
 const int flexSensorPins[5] = {34, 35, 32, 33, 25}; // Analog pins for flex sensors

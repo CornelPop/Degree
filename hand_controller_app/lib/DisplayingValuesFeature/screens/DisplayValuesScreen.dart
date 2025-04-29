@@ -20,7 +20,7 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
   final UserService userService = UserService();
   final AuthService authService = AuthService();
 
-  final String esp32IpAddress = "http://192.168.227.136";
+  final String esp32IpAddress = "http://192.168.217.136";
   Map<String, int> currentFlexValues = {
     'Thumb': 0,
     'Index': 0,
@@ -86,36 +86,18 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
     }
   }
 
-  // void readFlexSensor() async {
-  //   // Simulated sensor values; replace this with actual HTTP request
-  //   setState(() {
-  //     currentFlexValues = {
-  //       'Thumb': (currentFlexValues['Thumb']! + 10) % 100,
-  //       'Index': (currentFlexValues['Index']! + 15) % 100,
-  //       'Middle': (currentFlexValues['Middle']! + 20) % 100,
-  //       'Ring': (currentFlexValues['Ring']! + 25) % 100,
-  //       'Pinky': (currentFlexValues['Pinky']! + 30) % 100,
-  //     };
-  //   });
-  // }
-
   Future<void> readFlexSensor() async {
-    if (isRequestInProgress) return;  // Prevent new requests if one is still in progress
+    if (isRequestInProgress) return;
     isRequestInProgress = true;
 
     try {
       final response = await http.get(Uri.parse("$esp32IpAddress/READ_FLEX_SENSOR_VALUES"));
 
       if (response.statusCode == 200) {
-        // int flexValue = int.parse(response.body.trim());
-        //
-        // setState(() {
-        //   currentFlexValues['Index'] = flexValue;
-        // });
 
-        List<String> values = response.body.trim().split(RegExp(r'\s+')); // Splits by any whitespace (spaces, tabs, newlines)
-
-        if (values.length == 5) { // Ensure all 5 values are received
+        List<String> values = response.body.trim().split(RegExp(r'\s+'));
+        print(values);
+        if (values.length == 5) {
           setState(() {
             currentFlexValues = {
               'Thumb': int.parse(values[0]),
@@ -127,48 +109,15 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
           });
         }
 
-        //print("Flex Sensor Value: $flexValue");
       } else {
         print("Error: ${response.statusCode}");
       }
     } catch (e) {
       print("Request failed: $e");
     } finally {
-      isRequestInProgress = false;  // Allow the next request
+      isRequestInProgress = false;
     }
   }
-
-  // Future<void> readFlexSensor() async {
-  //   if (isRequestInProgress) return; // Prevent new requests if one is still in progress
-  //   isRequestInProgress = true;
-  //
-  //   try {
-  //     final response = await http.get(Uri.parse("$esp32IpAddress/READ_FLEX_SENSOR_VALUES"));
-  //
-  //     if (response.statusCode == 200) {
-  //       final Map<String, dynamic> data = jsonDecode(response.body);
-  //       print(data);
-  //
-  //       setState(() {
-  //         currentFlexValues = {
-  //           'Thumb': data['sensor1'] ?? 0,
-  //           'Index': data['sensor2'] ?? 0,
-  //           'Middle': data['sensor3'] ?? 0,
-  //           'Ring': data['sensor4'] ?? 0,
-  //           'Pinky': data['sensor5'] ?? 0,
-  //         };
-  //       });
-  //
-  //       print("Flex Sensor Values: $currentFlexValues");
-  //     } else {
-  //       print("Error: ${response.statusCode}");
-  //     }
-  //   } catch (e) {
-  //     print("Request failed: $e");
-  //   } finally {
-  //     isRequestInProgress = false; // Allow the next request
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
