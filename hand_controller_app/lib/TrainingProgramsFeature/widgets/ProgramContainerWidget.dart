@@ -1,24 +1,34 @@
 import 'package:flutter/material.dart';
 
+import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
 import '../models/TrainingProgram.dart';
 import '../screens/ProgramDetailsScreen.dart';
 
 class ProgramContainer extends StatelessWidget {
   final TrainingProgram program;
+  final User? user;
   final String title;
   final String subtitle;
   final String difficulty;
+  final List<TrainingProgram> favoriteTrainingPrograms;
+  final void Function(String programId, bool isNowFavorite) onFavoriteChanged;
 
   ProgramContainer({
     required this.program,
     required this.title,
     required this.subtitle,
     required this.difficulty,
+    required this.favoriteTrainingPrograms,
+    required this.user,
+    required this.onFavoriteChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    bool isFavorite = favoriteTrainingPrograms.any(
+          (p) => p.trainingProgramId == program.trainingProgramId,
+    );
     Color? iconColor;
     List<double> opacities;
     Color bgColor;
@@ -42,7 +52,12 @@ class ProgramContainer extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProgramDetailsScreen(program: program),
+            builder: (context) => ProgramDetailsScreen(
+                user: user,
+                isFavorite: isFavorite,
+                program: program,
+              onFavoriteChanged: onFavoriteChanged,
+            ),
           ),
         );
       },

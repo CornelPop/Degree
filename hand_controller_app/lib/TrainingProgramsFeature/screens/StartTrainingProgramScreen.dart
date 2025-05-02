@@ -6,6 +6,7 @@ import 'package:hand_controller_app/TrainingProgramsFeature/widgets/CountdownTim
 import 'package:hand_controller_app/TrainingProgramsFeature/widgets/ProgressBarWidget.dart';
 import 'package:http/http.dart' as http;
 
+import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
 import '../../core/widgets/AppBarWidget.dart';
 import '../models/TrainingProgram.dart';
@@ -13,8 +14,9 @@ import '../services/TrainingProgramService.dart';
 
 class StartTrainingProgramScreen extends StatefulWidget {
   final TrainingProgram program;
+  final User? user;
 
-  StartTrainingProgramScreen({Key? key, required this.program}) : super(key: key);
+  StartTrainingProgramScreen({Key? key, required this.program, required this.user}) : super(key: key);
 
   @override
   _StartTrainingProgramScreenState createState() => _StartTrainingProgramScreenState();
@@ -26,7 +28,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   final Stopwatch _stopwatchEntireProgram = Stopwatch();
   late AnimationController _animationController;
   late Animation<double> _animation;
-  int _currentTime = 5;
+  int _currentTime = 1;
   int _currentExerciseIndex = -1;
   bool _isExerciseActive = false;
 
@@ -37,6 +39,8 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   int numberIntermediateExercises = 0;
   int numberDifficultExercises = 0;
   int timeSpentInWorkouts = 0;
+
+  late String uid;
 
   String flexSensorValue = '';
   bool isRequestInProgress = false;
@@ -57,9 +61,10 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   @override
   void initState() {
     super.initState();
+    uid = widget.user!.uid;
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 5),
+      duration: const Duration(seconds: 1),
     );
     _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_animationController);
     _startCountdown();
@@ -171,7 +176,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
 
     setState(() {
       _currentExerciseIndex++;
-      _currentTime = 5;
+      _currentTime = 1;
     });
 
     _animationController.reset();
@@ -216,6 +221,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
             } else {
               _endEntireProgramStopWatch();
               _cancelExistingTimers();
+              _addTrainingProgramToCompleted(widget.program);
               _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
               _showCompletionDialog();
             }
@@ -226,8 +232,6 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   }
 
   void _showCompletionDialog() {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -304,38 +308,32 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   }
 
   Future<void> _updateExerciseCounter(String category, int? timeSpent) async {
-    String? uid = await userService.getUserUid();
-    if (uid != null) {
-      Map<String, dynamic>? userData = await userService.getUserData(uid);
-      if (userData != null) {
+    Map<String, dynamic>? userData = await userService.getUserData(uid);
+    if (userData != null) {
 
-        timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int? ?? 0;
-        timeSpentInWorkouts += timeSpent ?? 0;
-        await userService.updateUserField(uid, 'timeSpentInWorkouts', timeSpentInWorkouts);
+      timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int? ?? 0;
+      timeSpentInWorkouts += timeSpent ?? 0;
+      await userService.updateUserField(uid, 'timeSpentInWorkouts', timeSpentInWorkouts);
 
-        if (category == 'Beginner') {
-          numberBeginnerExercises = userData['numberBeginnerExercises'] as int? ?? 0;
-          numberBeginnerExercises++;
-          await userService.updateUserField(uid, 'numberBeginnerExercises', numberBeginnerExercises);
-        } else if (category == 'Intermediate') {
-          numberIntermediateExercises = userData['numberIntermediateExercises'] as int? ?? 0;
-          numberIntermediateExercises++;
-          await userService.updateUserField(uid, 'numberIntermediateExercises', numberIntermediateExercises);
-        } else if (category == 'Difficult') {
-          numberDifficultExercises = userData['numberDifficultExercises'] as int? ?? 0;
-          numberDifficultExercises++;
-          await userService.updateUserField(uid, 'numberDifficultExercises', numberDifficultExercises);
-        }
+      if (category == 'Beginner') {
+        numberBeginnerExercises = userData['numberBeginnerExercises'] as int? ?? 0;
+        numberBeginnerExercises++;
+        await userService.updateUserField(uid, 'numberBeginnerExercises', numberBeginnerExercises);
+      } else if (category == 'Intermediate') {
+        numberIntermediateExercises = userData['numberIntermediateExercises'] as int? ?? 0;
+        numberIntermediateExercises++;
+        await userService.updateUserField(uid, 'numberIntermediateExercises', numberIntermediateExercises);
+      } else if (category == 'Difficult') {
+        numberDifficultExercises = userData['numberDifficultExercises'] as int? ?? 0;
+        numberDifficultExercises++;
+        await userService.updateUserField(uid, 'numberDifficultExercises', numberDifficultExercises);
       }
     }
-  }
+    }
 
   Future<void> _addTrainingProgramToCompleted(TrainingProgram trainingProgram) async {
-    String? uid = await userService.getUserUid();
-    if (uid != null) {
-      trainingProgramService.addCompletedProgram(uid, trainingProgram);
+    await trainingProgramService.addCompletedProgram(uid, trainingProgram);
     }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -416,14 +414,14 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               _cancelExistingTimers();
                               if (_currentExerciseIndex < widget.program.exercises.length - 1) {
                                 _isExerciseActive = false;
                                 _startExercise();
                               } else {
                                 _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
-                                _addTrainingProgramToCompleted(widget.program);
+                                await trainingProgramService.addCompletedProgram(uid, widget.program);
                                 _showCompletionDialog();
                                 _cancelExistingTimers();
                               }

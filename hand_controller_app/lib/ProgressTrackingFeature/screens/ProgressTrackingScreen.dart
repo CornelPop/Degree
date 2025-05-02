@@ -21,7 +21,7 @@ import '../../core/widgets/CustomDrawer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../widgets/LastWeekTotalNumberLineChart.dart';
 import '../widgets/TrainingDurationStackedBarChart.dart';
-import 'ShowAllProgramsScreen.dart';
+import 'AllCompletedTrainingProgramsScreen.dart';
 
 class ProgressTrackingScreen extends StatefulWidget {
   const ProgressTrackingScreen({super.key});
@@ -39,6 +39,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
   final PageController _pageController = PageController(viewportFraction: 1);
 
   List<TrainingProgram> completedPrograms = [];
+  List<TrainingProgram> favoritePrograms = [];
   String _sortBy = 'Date';
   bool _ascending = false;
 
@@ -82,6 +83,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
           consultations = consultationsLocal;
 
           completedPrograms = await trainingProgramService.getCompletedPrograms(uid);
+          favoritePrograms = await trainingProgramService.getFavoriteTrainingPrograms(uid);
 
           Map<String, dynamic>? assignedDoctorData = await userService.getUserData(userData['doctorId'] as String);
           List<Rating> ratingsLocal = await ratingService.getRatingsByDoctorId(userData['doctorId'] as String);
@@ -321,6 +323,8 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                                   child: DoneProgramContainer(
+                                    // userId: user!.uid,
+                                    // favoriteTrainingPrograms: favoritePrograms,
                                     program: program,
                                     title: program.name,
                                     date:
@@ -365,13 +369,13 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
                                       elevation: 0,
                                     ),
                                     onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ShowAllProgramsScreen(completedPrograms: completedPrograms),
-                                        ),
-                                      );
+                                      // Navigator.push(
+                                      //   context,
+                                      //   MaterialPageRoute(
+                                      //     builder: (context) =>
+                                      //         ShowAllProgramsScreen(user:patient, widget.favoritePrograms: favoritePrograms, completedPrograms: completedPrograms),
+                                      //   ),
+                                      // );
                                     },
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,

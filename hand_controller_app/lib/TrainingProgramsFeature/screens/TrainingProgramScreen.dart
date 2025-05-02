@@ -1,24 +1,28 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
 import 'package:hand_controller_app/NotificationFeature/services/NotificationService.dart';
+import 'package:hand_controller_app/ProgressTrackingFeature/screens/AllCompletedTrainingProgramsScreen.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/screens/ProgressTrackingScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/CreateTrainingProgramScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireMedicalHistoryScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireProgressTrackingScreen.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/services/TrainingProgramService.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import 'package:hand_controller_app/core/widgets/CustomDrawer.dart';
 import '../../AlertDialogs/ExitDialogWidget.dart';
+import '../../AuthFeature/models/Doctor.dart';
 import '../../AuthFeature/models/Patient.dart';
+import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
+import '../../core/widgets/LoadingWidget.dart';
 import '../models/MockDataTrainingPrograms.dart';
 import '../models/TrainingProgram.dart';
 import '../widgets/ProgramContainerWidget.dart';
 import 'package:lottie/lottie.dart';
+
+import 'AllTrainingProgramsScreen.dart';
 
 class TrainingProgramScreen extends StatefulWidget {
   const TrainingProgramScreen({Key? key}) : super(key: key);
@@ -30,6 +34,7 @@ class TrainingProgramScreen extends StatefulWidget {
 class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   final UserService userService = UserService();
   final AuthService authService = AuthService();
+  final TrainingProgramService trainingProgramService = TrainingProgramService();
 
   String name = '';
   String email = '';
@@ -62,6 +67,18 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   String _orderByField = 'name';
   bool _isAscending = true;
   String _searchedString = '';
+
+  List<TrainingProgram> favoriteTrainingPrograms = [];
+  List<TrainingProgram> trainingPrograms = [];
+  List<TrainingProgram> beginnerTrainingPrograms = [];
+  List<TrainingProgram> intermediateTrainingPrograms = [];
+  List<TrainingProgram> difficultTrainingPrograms = [];
+
+  Patient? patient;
+  Doctor? assignedDoctor;
+  Doctor? doctor;
+
+  User? user;
 
   @override
   void initState() {
@@ -198,71 +215,67 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
     });
   }
 
-  Future<Map<String, dynamic>?> fetchUserData() async {
-    String? uid = await userService.getUserUid();
-    if (uid != null) {
-      Map<String, dynamic>? userData = await userService.getUserData(uid);
-      if (userData != null) {
-        if (userData['role'] as String == 'Patient') {
-          setState(() {
-            name = userData['name'] as String;
-            email = userData['email'] as String;
-            role = userData['role'] as String;
-
-            numberBeginnerExercises =
-                userData['numberBeginnerExercises'] as int;
-            numberIntermediateExercises =
-                userData['numberIntermediateExercises'] as int;
-            numberDifficultExercises =
-                userData['numberDifficultExercises'] as int;
-            timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int;
-            accuracyOfExercises = userData['accuracyOfExercises'] as double;
-          });
-
-          return {
-            'role': 'Patient',
-            'name': userData['name'] as String,
-            'email': userData['email'] as String,
-            'numberBeginnerExercises':
-                userData['numberBeginnerExercises'] as int,
-            'numberIntermediateExercises':
-                userData['numberIntermediateExercises'] as int,
-            'numberDifficultExercises':
-                userData['numberDifficultExercises'] as int,
-            'timeSpentInWorkouts': userData['timeSpentInWorkouts'] as int,
-            'accuracyOfExercises': userData['accuracyOfExercises'] as double,
-          };
-        } else if (userData['role'] as String == 'Doctor') {
-          List<dynamic>? patientsLocal =
-              await userService.getPatientsByDoctorId(uid);
-
-          setState(() {
-            name = userData['name'] as String;
-            email = userData['email'] as String;
-            role = userData['role'] as String;
-
-            userId = uid;
-            patients = patientsLocal.cast<Patient>();
-            filteredPatients = patients;
-            _isExpandedList = List.generate(patients.length, (index) => false);
-          });
-
-          return {
-            'role': 'Doctor',
-            'name': userData['name'] as String,
-            'email': userData['email'] as String,
-            'userId': uid,
-            'patients': patientsLocal.cast<Patient>(),
-          };
-        }
+  void _handleFavoriteChanged(String programId, bool isNowFavorite) {
+    setState(() {
+      if (isNowFavorite) {
+        favoriteTrainingPrograms.add(trainingPrograms.firstWhere((p) => p.trainingProgramId == programId));
       } else {
-        print('No user data found.');
+        favoriteTrainingPrograms.removeWhere((p) => p.trainingProgramId == programId);
       }
-    } else {
-      print('No UID found in SharedPreferences.');
-    }
-    return null; // Return null if no data is found
+    });
   }
+  
+  Future<void> fetchUserData() async {
+    String? uid = await userService.getUserUid();
+    if (uid == null) {
+      debugPrint('No UID found in SharedPreferences.');
+      return;
+    }
+
+    Map<String, dynamic>? userData = await userService.getUserData(uid);
+    if (userData == null) {
+      debugPrint('No user data found.');
+      return;
+    }
+
+    role = userData['role'] as String;
+    name = userData['name'] as String;
+    email = userData['email'] as String;
+
+    if (role == 'Patient') {
+      patient = Patient.fromMap(userData);
+      user = patient;
+      trainingPrograms = await trainingProgramService.getAllTrainingPrograms();
+      favoriteTrainingPrograms = await trainingProgramService.getFavoriteTrainingPrograms(uid);
+
+      beginnerTrainingPrograms = trainingPrograms
+          .where((program) => program.category == 'Beginner')
+          .toList();
+      intermediateTrainingPrograms = trainingPrograms
+          .where((program) => program.category == 'Intermediate')
+          .toList();
+      difficultTrainingPrograms = trainingPrograms
+          .where((program) => program.category == 'Difficult')
+          .toList();
+
+      numberBeginnerExercises = userData['numberBeginnerExercises'] as int;
+      numberIntermediateExercises = userData['numberIntermediateExercises'] as int;
+      numberDifficultExercises = userData['numberDifficultExercises'] as int;
+      timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int;
+      accuracyOfExercises = userData['accuracyOfExercises'] as double;
+
+    } else if (role == 'Doctor') {
+      doctor = Doctor.fromMap(userData);
+      user = doctor;
+
+      userId = uid;
+      List<dynamic> patientsLocal = await userService.getPatientsByDoctorId(uid);
+      patients = patientsLocal.cast<Patient>();
+      filteredPatients = patients;
+      _isExpandedList = List.generate(patients.length, (_) => false);
+    }
+  }
+
 
   @override
   void didChangeDependencies() {
@@ -282,48 +295,36 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
       onWillPop: () async {
         return await ExitDialog.showExitDialog(context);
       },
-      child: FutureBuilder(
-        future: _fetchUserDataFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(
-              body: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                ),
-                child: const Center(child: CircularProgressIndicator()),
-              ),
-            );
-          }
+      child: Scaffold(
+        body: FutureBuilder(
+          future: _fetchUserDataFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const LoadingWidget();
+            }
 
-          if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasError) {
-              return Scaffold(
-                body: Center(
-                  child: Text(
-                    'An error occurred: ${snapshot.error}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
+              return Center(
+                child: Text(
+                  'An error occurred: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
                 ),
               );
             }
 
-            if (snapshot.hasData) {
+            if (snapshot.connectionState == ConnectionState.done && user != null) {
               return Scaffold(
-                drawer: CustomDrawer(name: name, email: email, selectedTile: 'Dashboard Programs'),
+                drawer: CustomDrawer(
+                  name: user!.name,
+                  email: user!.email,
+                  selectedTile: 'Dashboard Programs',
+                ),
                 body: Stack(
                   children: [
                     Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            CustomTheme.mainColor2,
-                            CustomTheme.mainColor
-                          ],
+                          colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
@@ -341,10 +342,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                           child: Container(
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [
-                                  CustomTheme.mainColor2,
-                                  CustomTheme.mainColor,
-                                ],
+                                colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
@@ -360,20 +358,15 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                 ),
               );
             }
-          }
-          return Scaffold(
-            body: Center(
-              child: const Text('No data found.'),
-            ),
-          );
-        },
+
+            return const Center(child: Text('No user data available.'));
+          },
+        ),
       ),
     );
   }
 
   Widget _buildContentForPatient() {
-    List<TrainingProgram> programs = getTrainingPrograms();
-
     return Container(
       height: MediaQuery.of(context).size.height,
       width: MediaQuery.of(context).size.width,
@@ -764,22 +757,49 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                 child: ListView.builder(
                   physics: BouncingScrollPhysics(),
                   scrollDirection: Axis.horizontal,
-                  itemCount: programs.length,
+                  itemCount: 4,
                   itemBuilder: (context, index) {
-                    final program = programs[index];
-                    if (program.category.compareTo('Beginner') == 0) {
+                    if (index < 3) {
+                      final program = beginnerTrainingPrograms[index];
                       return Container(
                         margin: EdgeInsets.symmetric(horizontal: 15.0),
                         child: ProgramContainer(
+                          favoriteTrainingPrograms: favoriteTrainingPrograms,
+                          user: user,
                           program: program,
                           title: program.name,
                           subtitle:
-                              '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                          '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                           difficulty: program.category,
+                          onFavoriteChanged: _handleFavoriteChanged,
                         ),
                       );
                     } else {
-                      return Container();
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AllTrainingProgramsScreen(
+                                  programs: trainingPrograms,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: CustomTheme.accentColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Icon(Icons.more_horiz, size: 40, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      );
                     }
                   },
                 ),
@@ -804,22 +824,49 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                 child: ListView.builder(
                   physics: BouncingScrollPhysics(),
                   scrollDirection: Axis.horizontal,
-                  itemCount: programs.length,
+                  itemCount: 4,
                   itemBuilder: (context, index) {
-                    final program = programs[index];
-                    if (program.category.compareTo('Intermediate') == 0) {
+                    if (index < 3) {
+                      final program = intermediateTrainingPrograms[index];
                       return Container(
                         margin: EdgeInsets.symmetric(horizontal: 15.0),
                         child: ProgramContainer(
+                          favoriteTrainingPrograms: favoriteTrainingPrograms,
+                          user: user,
                           program: program,
                           title: program.name,
                           subtitle:
-                              '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                          '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                           difficulty: program.category,
+                          onFavoriteChanged: _handleFavoriteChanged,
                         ),
                       );
                     } else {
-                      return Container();
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AllTrainingProgramsScreen(
+                                  programs: trainingPrograms,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: CustomTheme.accentColor2,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Icon(Icons.more_horiz, size: 40, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      );
                     }
                   },
                 ),
@@ -844,24 +891,49 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                 child: ListView.builder(
                   physics: BouncingScrollPhysics(),
                   scrollDirection: Axis.horizontal,
-                  itemCount: programs.length,
+                  itemCount: 4,
                   itemBuilder: (context, index) {
-                    final program = programs[index];
-                    if (program.category.compareTo('Difficult') == 0) {
+                    if (index < 3) {
+                      final program = difficultTrainingPrograms[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                        child: Container(
-                          child: ProgramContainer(
-                            program: program,
-                            title: program.name,
-                            subtitle:
-                                '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
-                            difficulty: program.category,
-                          ),
+                        child: ProgramContainer(
+                          user: user,
+                          favoriteTrainingPrograms: favoriteTrainingPrograms,
+                          program: program,
+                          title: program.name,
+                          subtitle: '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                          difficulty: program.category,
+                          onFavoriteChanged: _handleFavoriteChanged,
                         ),
                       );
                     } else {
-                      return Container();
+                      // 4th item: "more" icon
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AllTrainingProgramsScreen(
+                                  programs: trainingPrograms,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: CustomTheme.accentColor3,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Icon(Icons.more_horiz, size: 40, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      );
                     }
                   },
                 ),

@@ -11,7 +11,7 @@ import '../../AuthFeature/services/AuthService.dart';
 import '../../AuthFeature/services/UserService.dart';
 import '../../AlertDialogs/ExitDialogWidget.dart';
 import '../../GlobalThemeData.dart';
-import '../../ProgressTrackingFeature/screens/ShowAllProgramsScreen.dart';
+import '../../ProgressTrackingFeature/screens/AllCompletedTrainingProgramsScreen.dart';
 import '../../ProgressTrackingFeature/widgets/TrainingDurationStackedBarChart.dart';
 import '../../TrainingProgramsFeature/models/TrainingProgram.dart';
 import '../../TrainingProgramsFeature/widgets/ProgramContainerWidget.dart';
@@ -34,6 +34,7 @@ class _EntireProgressTrackingScreenState
   final TrainingProgramService trainingProgramService = TrainingProgramService();
 
   List<TrainingProgram> completedPrograms = [];
+  List<TrainingProgram> favoritePrograms = [];
   String _sortBy = 'Date';
   bool _ascending = false;
 
@@ -51,6 +52,7 @@ class _EntireProgressTrackingScreenState
       Map<String, dynamic>? userData = await userService.getUserData(uid);
       List<TrainingProgram> programs =
           await trainingProgramService.getCompletedPrograms(widget.patient.uid);
+      favoritePrograms = await trainingProgramService.getFavoriteTrainingPrograms(widget.patient.uid);
       if (userData != null) {
         setState(() async {
           completedPrograms = programs;
@@ -271,28 +273,30 @@ class _EntireProgressTrackingScreenState
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  ListView.builder(
-                    physics: NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: completedPrograms.length > 5
-                        ? 5
-                        : completedPrograms.length,
-                    itemBuilder: (context, index) {
-                      final program = completedPrograms[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: DoneProgramContainer(
-                          program: program,
-                          title: program.name,
-                          date:
-                              'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
-                          subtitle:
-                              '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
-                          difficulty: program.category,
-                        ),
-                      );
-                    },
-                  ),
+                  // ListView.builder(
+                  //   physics: NeverScrollableScrollPhysics(),
+                  //   shrinkWrap: true,
+                  //   itemCount: completedPrograms.length > 5
+                  //       ? 5
+                  //       : completedPrograms.length,
+                  //   itemBuilder: (context, index) {
+                  //     final program = completedPrograms[index];
+                  //     return Padding(
+                  //       padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  //       child:
+                  //       DoneProgramContainer(
+                  //         favoriteTrainingPrograms: favoritePrograms,
+                  //         program: program,
+                  //         title: program.name,
+                  //         date:
+                  //             'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
+                  //         subtitle:
+                  //             '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                  //         difficulty: program.category,
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
                   if (completedPrograms.length > 5)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -326,13 +330,14 @@ class _EntireProgressTrackingScreenState
                             elevation: 0,
                           ),
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ShowAllProgramsScreen(
-                                    completedPrograms: completedPrograms),
-                              ),
-                            );
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) => ShowAllProgramsScreen(
+                            //       favoritePrograms: favoritePrograms,
+                            //         completedPrograms: completedPrograms),
+                            //   ),
+                            // );
                           },
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,

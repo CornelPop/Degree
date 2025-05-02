@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/DoneProgramContainerWidget.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
+import '../../AuthFeature/models/User.dart';
 import '../../AuthFeature/services/AuthService.dart';
 import '../../AuthFeature/services/UserService.dart';
 import '../../AlertDialogs/ExitDialogWidget.dart';
 import '../../GlobalThemeData.dart';
 import '../../TrainingProgramsFeature/models/TrainingProgram.dart';
 
-class ShowAllProgramsScreen extends StatefulWidget {
-  final List<TrainingProgram> completedPrograms;
+class AllTrainingProgramsScreen extends StatefulWidget {
+  final List<TrainingProgram> programs;
 
-  const ShowAllProgramsScreen({Key? key, required this.completedPrograms})
+  const AllTrainingProgramsScreen({Key? key, required this.programs})
       : super(key: key);
 
   @override
-  _ShowAllProgramsScreenState createState() => _ShowAllProgramsScreenState();
+  _AllTrainingProgramsScreenState createState() => _AllTrainingProgramsScreenState();
 }
 
-class _ShowAllProgramsScreenState extends State<ShowAllProgramsScreen> {
+class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
   final UserService userService = UserService();
   final AuthService authService = AuthService();
 
@@ -63,7 +64,7 @@ class _ShowAllProgramsScreenState extends State<ShowAllProgramsScreen> {
         _isAscending = true;
       }
 
-      widget.completedPrograms.sort((a, b) {
+      widget.programs.sort((a, b) {
         int comparison;
         switch (_sortField) {
           case 'date':
@@ -196,7 +197,7 @@ class _ShowAllProgramsScreenState extends State<ShowAllProgramsScreen> {
               child: Container(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Training Programs Completed: ${widget.completedPrograms.length}',
+                  'Training Programs Completed: ${widget.programs.length}',
                   style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -258,18 +259,20 @@ class _ShowAllProgramsScreenState extends State<ShowAllProgramsScreen> {
               child: ListView.builder(
                 physics: NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
-                itemCount: widget.completedPrograms.length,
+                itemCount: widget.programs.length,
                 itemBuilder: (context, index) {
-                  final program = widget.completedPrograms[index];
+                  final program = widget.programs[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: DoneProgramContainer(
+                      //userId: widget.user.uid,
+                      //favoriteTrainingPrograms: ,
                       program: program,
                       title: program.name,
                       date:
-                          'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
+                      'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
                       subtitle:
-                          '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                      '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                       difficulty: program.category,
                     ),
                   );

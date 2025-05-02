@@ -6,21 +6,24 @@ import '../../TrainingProgramsFeature/screens/ProgramDetailsScreen.dart';
 
 class DoneProgramContainer extends StatelessWidget {
   final TrainingProgram program;
+  //final String userId;
   final String title;
   final String date;
   final String subtitle;
   final String difficulty;
+  //final List<TrainingProgram> favoriteTrainingPrograms;
 
   DoneProgramContainer({
     required this.program,
     required this.title,
     required this.date,
     required this.subtitle,
-    required this.difficulty,
+    required this.difficulty//, required this.favoriteTrainingPrograms//, required this.userId,
   });
 
   @override
   Widget build(BuildContext context) {
+    //bool isFavorite = favoriteTrainingPrograms.contains(program);
     Color? iconColor;
     List<double> opacities;
     Color bgColor;
@@ -41,12 +44,12 @@ class DoneProgramContainer extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProgramDetailsScreen(program: program),
-          ),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => ProgramDetailsScreen(userId:userId, isFavorite: isFavorite, program: program),
+        //   ),
+        // );
       },
       child: Container(
         height: MediaQuery.of(context).size.height * 0.15,

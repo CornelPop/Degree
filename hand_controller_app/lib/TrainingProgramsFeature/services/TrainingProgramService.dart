@@ -90,7 +90,7 @@ class TrainingProgramService {
     }
   }
 
-  Future<List<String>> getFavoriteTrainingPrograms(String userId) async {
+  Future<List<TrainingProgram>> getFavoriteTrainingPrograms(String userId) async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -98,8 +98,9 @@ class TrainingProgramService {
           .collection('favoriteTrainingPrograms')
           .get();
 
-      return querySnapshot.docs.map((doc) => doc.id).toList();
-    } catch (e) {
+      return querySnapshot.docs
+          .map((doc) => TrainingProgram.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();    } catch (e) {
       print("Error getting favorite training programs: $e");
       return [];
     }
@@ -138,8 +139,9 @@ class TrainingProgramService {
       String userId, TrainingProgram program) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+    print("ajunge inainte");
     program.updateDate(DateTime.now());
-
+    print("ajunge mijloc");
     try {
       await firestore
           .collection('users')
