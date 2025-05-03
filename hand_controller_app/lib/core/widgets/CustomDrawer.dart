@@ -1,35 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
+import 'package:hand_controller_app/PatientsManagementFeature/screens/PatientsManagementScreen.dart';
 import 'package:hand_controller_app/ProfileFeature/screens/ProfileScreen.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/screens/ProgressTrackingScreen.dart';
 import 'package:hand_controller_app/SettingsFeature/screens/SettingsScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/TrainingProgramScreen.dart';
 
+import '../../AuthFeature/models/User.dart';
 import '../../AuthFeature/screens/SignInScreen.dart';
 import '../../DisplayingValuesFeature/screens/DisplayValuesScreen.dart';
 import '../../GlobalThemeData.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final String name;
-  final String email;
-  final String selectedTile; // Indicates which tile should have a different style
+  final User? user;
+  final String selectedTile;
 
   final AuthService _authService = AuthService();
 
   CustomDrawer({
     Key? key,
-    required this.name,
-    required this.email,
+    required this.user,
     required this.selectedTile,
   }) : super(key: key);
 
   Widget buildListTile(BuildContext context, {required Icon icon, required String text, required VoidCallback onTap}) {
-    bool isSelected = text == selectedTile; // Check if this tile is selected
+    bool isSelected = text == selectedTile;
 
     return Container(
       decoration: isSelected
           ? BoxDecoration(
-        color: Colors.white.withOpacity(0.2), // Different background for selected tile
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(30),
       )
           : null,
@@ -42,12 +42,12 @@ class CustomDrawer extends StatelessWidget {
               text,
               style: TextStyle(
                 color: Colors.white,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, // Bold text for selected tile
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
         ),
-        onTap: isSelected ? null : onTap, // Disable tap if it's the selected tile
+        onTap: isSelected ? null : onTap,
       ),
     );
   }
@@ -97,9 +97,9 @@ class CustomDrawer extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: const TextStyle(fontSize: 20, color: Colors.white)),
+                        Text(user!.name, style: const TextStyle(fontSize: 20, color: Colors.white)),
                         SizedBox(height: 10),
-                        Text(email, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+                        Text(user!.email, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
                       ],
                     ),
                   ],
@@ -110,7 +110,7 @@ class CustomDrawer extends StatelessWidget {
             buildListTile(
               context,
               icon: Icon(Icons.dashboard, color: Colors.white),
-              text: 'Dashboard Programs',
+              text: 'Dashboard',
               onTap: () {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
@@ -128,8 +128,19 @@ class CustomDrawer extends StatelessWidget {
             ),
             buildListTile(
               context,
-              icon: Icon(Icons.track_changes, color: Colors.white),
-              text: 'Progress Tracking',
+              icon: Icon(Icons.assignment, color: Colors.white),
+              text: 'Patient Management',
+              onTap: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const PatientsManagementScreen()),
+                      (Route<dynamic> route) => false,
+                );
+              },
+            ),
+            buildListTile(
+              context,
+              icon: user!.role == 'Patient' ? Icon(Icons.track_changes, color: Colors.white) : Icon(Icons.view_list, color: Colors.white),
+              text: user!.role == 'Patient' ? 'Progress Tracking' : 'Program Management',
               onTap: () {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => ProgressTrackingScreen()),

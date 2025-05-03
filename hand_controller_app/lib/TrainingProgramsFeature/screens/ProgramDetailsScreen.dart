@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/screens/ReviewTrainingProgramScreen.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../AuthFeature/models/User.dart';
@@ -6,6 +7,7 @@ import '../../GlobalThemeData.dart';
 import '../models/TrainingProgram.dart';
 import '../services/TrainingProgramService.dart';
 import 'StartTrainingProgramScreen.dart';
+import 'TrainingProgramScreen.dart';
 
 class ProgramDetailsScreen extends StatefulWidget {
   final TrainingProgram program;
@@ -14,7 +16,11 @@ class ProgramDetailsScreen extends StatefulWidget {
   final void Function(String programId, bool isNowFavorite) onFavoriteChanged;
 
   const ProgramDetailsScreen(
-      {Key? key, required this.program, required this.isFavorite, required this.user, required this.onFavoriteChanged})
+      {Key? key,
+      required this.program,
+      required this.isFavorite,
+      required this.user,
+      required this.onFavoriteChanged})
       : super(key: key);
 
   @override
@@ -23,7 +29,8 @@ class ProgramDetailsScreen extends StatefulWidget {
 
 class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
   late Color bgContainer;
-  final TrainingProgramService trainingProgramService = TrainingProgramService();
+  final TrainingProgramService trainingProgramService =
+      TrainingProgramService();
   late bool isFave;
 
   @override
@@ -51,9 +58,9 @@ class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
       widget.onFavoriteChanged(widget.program.trainingProgramId, false);
     }
   }
+
   @override
   Widget build(BuildContext context) {
-
     if (widget.program.category == 'Beginner') {
       bgContainer = CustomTheme.accentColor;
     } else if (widget.program.category == 'Intermediate') {
@@ -98,6 +105,21 @@ class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                   ),
                   onPressed: _toggleFavorite,
                 ),
+                widget.user!.role == 'Doctor'
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.delete,
+                          color: Colors.redAccent,
+                        ),
+                        onPressed: () async {
+                          await trainingProgramService.deleteTrainingProgram(widget.program.trainingProgramId);
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
+                                (Route<dynamic> route) => false,
+                          );
+                        },
+                      )
+                    : Container(),
                 IconButton(
                   icon: Icon(
                     Icons.question_mark,
@@ -267,19 +289,33 @@ class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          StartTrainingProgramScreen(user: widget.user, program: widget.program),
+                      builder: (context) => widget.user!.role == 'Patient'
+                          ? StartTrainingProgramScreen(
+                              user: widget.user, program: widget.program)
+                          : ReviewTrainingProgramScreen(
+                              trainingProgramExercises:
+                                  widget.program.exercises,
+                              userId: widget.user!.uid),
                     ),
                   );
                 },
-                child: const Text(
-                  'Start Program',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                child: widget.user!.role == 'Patient'
+                    ? const Text(
+                        'Start Program',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Edit Program',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
           ),

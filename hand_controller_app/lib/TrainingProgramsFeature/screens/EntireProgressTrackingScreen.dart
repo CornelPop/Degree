@@ -3,7 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/services/PdfService.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/LastMonthTotalNumberByCategoryPieChart.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/LastWeekTotalNumberLineChart.dart';
-import 'package:hand_controller_app/ProgressTrackingFeature/widgets/DoneProgramContainerWidget.dart';
+import 'package:hand_controller_app/ProgressTrackingFeature/widgets/FullProgramContainerWidget.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/services/TrainingProgramService.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import '../../AuthFeature/models/Patient.dart';

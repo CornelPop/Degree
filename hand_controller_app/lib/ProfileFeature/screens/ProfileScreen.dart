@@ -129,8 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 user != null) {
               return Scaffold(
                 drawer: CustomDrawer(
-                  name: user!.name,
-                  email: user!.email,
+                  user: user,
                   selectedTile: 'Profile',
                 ),
                 body: _buildProfileContent(),

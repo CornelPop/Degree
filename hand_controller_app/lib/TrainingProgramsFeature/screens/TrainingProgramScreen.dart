@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
 import 'package:hand_controller_app/NotificationFeature/services/NotificationService.dart';
+import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/screens/AllCompletedTrainingProgramsScreen.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/screens/ProgressTrackingScreen.dart';
+import 'package:hand_controller_app/ProgressTrackingFeature/widgets/FullProgramContainerWidget.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/CreateTrainingProgramScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireMedicalHistoryScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireProgressTrackingScreen.dart';
@@ -16,6 +18,7 @@ import '../../AuthFeature/models/Doctor.dart';
 import '../../AuthFeature/models/Patient.dart';
 import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
+import '../../ProfileFeature/models/Consultation.dart';
 import '../../core/widgets/LoadingWidget.dart';
 import '../models/MockDataTrainingPrograms.dart';
 import '../models/TrainingProgram.dart';
@@ -34,7 +37,9 @@ class TrainingProgramScreen extends StatefulWidget {
 class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   final UserService userService = UserService();
   final AuthService authService = AuthService();
-  final TrainingProgramService trainingProgramService = TrainingProgramService();
+  final TrainingProgramService trainingProgramService =
+      TrainingProgramService();
+  final ConsultationService consultationService = ConsultationService();
 
   String name = '';
   String email = '';
@@ -50,6 +55,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   int numberIntermediateExercises = 0;
   int numberDifficultExercises = 0;
   int timeSpentInWorkouts = 0;
+  int totalCompletions = 0;
   double accuracyOfExercises = 0.0;
 
   late Future<void> _fetchUserDataFuture;
@@ -73,6 +79,11 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   List<TrainingProgram> beginnerTrainingPrograms = [];
   List<TrainingProgram> intermediateTrainingPrograms = [];
   List<TrainingProgram> difficultTrainingPrograms = [];
+
+  Consultation? nextConsultation;
+  bool isExpanded = false;
+
+  TrainingProgram? lastTrainingProgramCreated;
 
   Patient? patient;
   Doctor? assignedDoctor;
@@ -218,13 +229,15 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   void _handleFavoriteChanged(String programId, bool isNowFavorite) {
     setState(() {
       if (isNowFavorite) {
-        favoriteTrainingPrograms.add(trainingPrograms.firstWhere((p) => p.trainingProgramId == programId));
+        favoriteTrainingPrograms.add(trainingPrograms
+            .firstWhere((p) => p.trainingProgramId == programId));
       } else {
-        favoriteTrainingPrograms.removeWhere((p) => p.trainingProgramId == programId);
+        favoriteTrainingPrograms
+            .removeWhere((p) => p.trainingProgramId == programId);
       }
     });
   }
-  
+
   Future<void> fetchUserData() async {
     String? uid = await userService.getUserUid();
     if (uid == null) {
@@ -246,7 +259,8 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
       patient = Patient.fromMap(userData);
       user = patient;
       trainingPrograms = await trainingProgramService.getAllTrainingPrograms();
-      favoriteTrainingPrograms = await trainingProgramService.getFavoriteTrainingPrograms(uid);
+      favoriteTrainingPrograms =
+          await trainingProgramService.getFavoriteTrainingPrograms(uid);
 
       beginnerTrainingPrograms = trainingPrograms
           .where((program) => program.category == 'Beginner')
@@ -259,23 +273,29 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
           .toList();
 
       numberBeginnerExercises = userData['numberBeginnerExercises'] as int;
-      numberIntermediateExercises = userData['numberIntermediateExercises'] as int;
+      numberIntermediateExercises =
+          userData['numberIntermediateExercises'] as int;
       numberDifficultExercises = userData['numberDifficultExercises'] as int;
       timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int;
       accuracyOfExercises = userData['accuracyOfExercises'] as double;
-
     } else if (role == 'Doctor') {
       doctor = Doctor.fromMap(userData);
       user = doctor;
+      totalCompletions = await trainingProgramService
+          .getTotalCompletionsForDoctorPrograms(uid);
+      nextConsultation =
+          await consultationService.getNextConsultationForDoctor(uid);
+      lastTrainingProgramCreated = await trainingProgramService
+          .getLastTrainingProgramCreatedByDoctor(uid);
 
       userId = uid;
-      List<dynamic> patientsLocal = await userService.getPatientsByDoctorId(uid);
+      List<dynamic> patientsLocal =
+          await userService.getPatientsByDoctorId(uid);
       patients = patientsLocal.cast<Patient>();
       filteredPatients = patients;
       _isExpandedList = List.generate(patients.length, (_) => false);
     }
   }
-
 
   @override
   void didChangeDependencies() {
@@ -312,19 +332,22 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
               );
             }
 
-            if (snapshot.connectionState == ConnectionState.done && user != null) {
+            if (snapshot.connectionState == ConnectionState.done &&
+                user != null) {
               return Scaffold(
                 drawer: CustomDrawer(
-                  name: user!.name,
-                  email: user!.email,
-                  selectedTile: 'Dashboard Programs',
+                  user: user,
+                  selectedTile: 'Dashboard',
                 ),
                 body: Stack(
                   children: [
                     Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
+                          colors: [
+                            CustomTheme.mainColor2,
+                            CustomTheme.mainColor
+                          ],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
@@ -342,7 +365,10 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                           child: Container(
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
+                                colors: [
+                                  CustomTheme.mainColor2,
+                                  CustomTheme.mainColor
+                                ],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
@@ -393,23 +419,28 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                       ElevatedButton(
                           onPressed: () {
                             final now = DateTime.now();
-                            final scheduleTime = now.add(Duration(seconds: 20)); // 30 seconds later
-                            NotificationService().showNotification(title: "Merge", body: "Merge");
-                            NotificationService().scheduleAppointmentNotification(title: 'Salut', body: 'Salut', scheduledNotificationDateTime: scheduleTime);
+                            final scheduleTime = now
+                                .add(Duration(seconds: 20)); // 30 seconds later
+                            NotificationService().showNotification(
+                                title: "Merge", body: "Merge");
+                            NotificationService()
+                                .scheduleAppointmentNotification(
+                                    title: 'Salut',
+                                    body: 'Salut',
+                                    scheduledNotificationDateTime:
+                                        scheduleTime);
                           },
-                          child: Text("Send noti")
-                      ),
+                          child: Text("Send noti")),
                       ElevatedButton(
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (context) =>
-                                const CreateTrainingProgramScreen(),
+                                    const CreateTrainingProgramScreen(),
                               ),
                             );
-                            },
-                          child: Text("Create training program")
-                      ),
+                          },
+                          child: Text("Create training program")),
                       const Opacity(
                         opacity: 0.7,
                         child: Text(
@@ -769,7 +800,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                           program: program,
                           title: program.name,
                           subtitle:
-                          '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                              '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                           difficulty: program.category,
                           onFavoriteChanged: _handleFavoriteChanged,
                         ),
@@ -783,7 +814,10 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => AllTrainingProgramsScreen(
+                                  user: user,
                                   programs: trainingPrograms,
+                                  favoriteTrainingPrograms:
+                                      favoriteTrainingPrograms,
                                 ),
                               ),
                             );
@@ -795,7 +829,8 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
-                              child: Icon(Icons.more_horiz, size: 40, color: Colors.white),
+                              child: Icon(Icons.more_horiz,
+                                  size: 40, color: Colors.white),
                             ),
                           ),
                         ),
@@ -836,7 +871,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                           program: program,
                           title: program.name,
                           subtitle:
-                          '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                              '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                           difficulty: program.category,
                           onFavoriteChanged: _handleFavoriteChanged,
                         ),
@@ -850,7 +885,10 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => AllTrainingProgramsScreen(
+                                  user: user,
                                   programs: trainingPrograms,
+                                  favoriteTrainingPrograms:
+                                      favoriteTrainingPrograms,
                                 ),
                               ),
                             );
@@ -862,7 +900,8 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
-                              child: Icon(Icons.more_horiz, size: 40, color: Colors.white),
+                              child: Icon(Icons.more_horiz,
+                                  size: 40, color: Colors.white),
                             ),
                           ),
                         ),
@@ -902,7 +941,8 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                           favoriteTrainingPrograms: favoriteTrainingPrograms,
                           program: program,
                           title: program.name,
-                          subtitle: '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                          subtitle:
+                              '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                           difficulty: program.category,
                           onFavoriteChanged: _handleFavoriteChanged,
                         ),
@@ -917,7 +957,10 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => AllTrainingProgramsScreen(
+                                  user: user,
                                   programs: trainingPrograms,
+                                  favoriteTrainingPrograms:
+                                      favoriteTrainingPrograms,
                                 ),
                               ),
                             );
@@ -929,7 +972,8 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
-                              child: Icon(Icons.more_horiz, size: 40, color: Colors.white),
+                              child: Icon(Icons.more_horiz,
+                                  size: 40, color: Colors.white),
                             ),
                           ),
                         ),
@@ -990,525 +1034,453 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15.0),
                 child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        CustomTheme.accentColor4,
-                        CustomTheme.accentColor2
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2), // Shadow color
-                        blurRadius: 20, // Blur radius
-                        offset: Offset(0, 0), // Offset of the shadow
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: TextFormField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      labelText: 'Search patients...',
-                      prefixIcon: Icon(Icons.search, color: Colors.white),
-                      border: InputBorder.none,
-                      labelStyle: TextStyle(color: Colors.white),
-                    ),
-                    style: TextStyle(color: Colors.white),
-                    onChanged: (value) {
-                      _searchedString = value;
-                      _filterBySearchField(value);
-                    },
+                  alignment: Alignment.centerLeft,
+                  child: const Text(
+                    'Your stats',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                 ),
               ),
-              SizedBox(
-                height: 20,
-              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15.0),
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  decoration: BoxDecoration(
-                    color: CustomTheme.accentColor4,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Theme(
-                    data: ThemeData().copyWith(dividerColor: Colors.transparent),
-                    child: ExpansionTile(
-                      backgroundColor: Colors.transparent,
-                      onExpansionChanged: (bool expanded) {
-                        setState(() {
-                          _isFilterTileExpended = expanded;
-                        });
-                      },
-                      title: const Text(
-                        'Filters',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: CustomTheme.accentColor4,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'Search by:',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          _buildSearchByButton('name', 'Name'),
-                                          _buildSearchByButton(
-                                              'rating', 'Rating'),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'Order By:',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          _buildOrderByButton('name', 'Name'),
-                                          _buildOrderByButton('rating', 'Rating'),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 10),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    Container(
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            CustomTheme.accentColor4,
-                                            CustomTheme.accentColor2,
-                                          ],
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.2),
-                                            blurRadius: 20,
-                                            offset: Offset(0, 0),
-                                          ),
-                                        ],
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      child: ElevatedButton(
-                                        onPressed: () async {
-                                          searchController.clear();
-                                          filteredPatients = patients;
-                                          _applyFilters();
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.transparent,
-                                          shadowColor: Colors.transparent,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30),
-                                          ),
-                                          elevation: 0, // Remove elevation
-                                        ),
-                                        child: const Text(
-                                          "Clear All",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors
-                                                .white, // Set text color to white
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            CustomTheme.accentColor4,
-                                            CustomTheme.accentColor2,
-                                          ],
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.2),
-                                            blurRadius: 20,
-                                            offset: Offset(0, 0),
-                                          ),
-                                        ],
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          //_applyFilters();
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.transparent,
-                                          shadowColor: Colors.transparent,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30),
-                                          ),
-                                          elevation: 0, // Remove elevation
-                                        ),
-                                        child: const Text(
-                                          "Apply",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors
-                                                .white, // Set text color to white
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 10),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(
-                height: 50,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: filteredPatients.length,
-                  itemBuilder: (context, index) {
-                    final patient = filteredPatients[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 15),
-                      decoration: BoxDecoration(
-                        color: CustomTheme.accentColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Theme(
-                        data: ThemeData().copyWith(dividerColor: Colors.transparent),
-                        child: ExpansionTile(
-                          backgroundColor: Colors.transparent,
-                          onExpansionChanged: (bool expanded) {
-                            setState(() {
-                              _isExpandedList[index] = expanded;
-                            });
-                          },
-                          title: Text(
-                            patient.name,
-                            style: TextStyle(color: Colors.white),
-                          ),
+                  alignment: Alignment.centerLeft,
+                  height: screenHeight * 0.35,
+                  //color: Colors.lightBlue,
+                  child: Row(
+                    children: [
+                      // First container with less space
+                      Expanded(
+                        flex: 1,
+                        child: Column(
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: CustomTheme.accentColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 15.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Email:',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ProgressTrackingScreen(),
                                     ),
-                                    Text(
-                                      patient.email,
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 14),
-                                    ),
-                                    SizedBox(height: 8),
-                                    const Text(
-                                      'Email:',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      patient.email,
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 14),
-                                    ),
-                                    SizedBox(height: 8),
-                                    const Text(
-                                      'Email:',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      patient.email,
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 14),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Row(
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                      right: 8.0),
+                                  decoration: BoxDecoration(
+                                    color: CustomTheme.accentColor4,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Column(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Expanded(
-                                          child: Container(
-                                            height: 50,
-                                            decoration: BoxDecoration(
-                                              gradient: const LinearGradient(
-                                                colors: [
-                                                  CustomTheme.accentColor4,
-                                                  CustomTheme.accentColor2,
-                                                ],
-                                                begin: Alignment.centerLeft,
-                                                end: Alignment.centerRight,
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color:
-                                                      Colors.black.withOpacity(0.2),
-                                                  blurRadius: 20,
-                                                  offset: Offset(0, 0),
-                                                ),
-                                              ],
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                            ),
-                                            child: ElevatedButton(
-                                              onPressed: () async {
-                                                Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        EntireMedicalHistoryScreen(
-                                                            patient: patient),
-                                                  ),
-                                                );
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.transparent,
-                                                shadowColor: Colors.transparent,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                ),
-                                                elevation: 0, // Remove elevation
-                                              ),
-                                              child: const Text(
-                                                "Med. History",
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors
-                                                      .white, // Set text color to white
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        Icon(Icons.loop,
+                                            color: Colors.white, size: 40),
+                                        Text(
+                                          '$totalCompletions',
+                                          style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white),
                                         ),
-                                        SizedBox(width: 10,),
-                                        Expanded(
-                                          child: Container(
-                                            height: 50,
-                                            decoration: BoxDecoration(
-                                              gradient: const LinearGradient(
-                                                colors: [
-                                                  CustomTheme.accentColor4,
-                                                  CustomTheme.accentColor2,
-                                                ],
-                                                begin: Alignment.centerLeft,
-                                                end: Alignment.centerRight,
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color:
-                                                      Colors.black.withOpacity(0.2),
-                                                  blurRadius: 20,
-                                                  offset: Offset(0, 0),
-                                                ),
-                                              ],
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                            ),
-                                            child: ElevatedButton(
-                                              onPressed: () async {
-                                                Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          EntireProgressTrackingScreen(
-                                                              patient: patient)),
-                                                );
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.transparent,
-                                                shadowColor: Colors.transparent,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                ),
-                                                elevation: 0, // Remove elevation
-                                              ),
-                                              child: const Text(
-                                                "Training",
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors
-                                                      .white, // Set text color to white
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        Text(
+                                          'Completions',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                        Text(
+                                          'on your',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                        Text(
+                                          'programs',
+                                          style: TextStyle(color: Colors.white),
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 8),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    );
-                  },
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ProgressTrackingScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                      bottom: 8.0, left: 8.0),
+                                  decoration: BoxDecoration(
+                                    color: CustomTheme.accentColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.bolt,
+                                            color: Colors.blue[900], size: 30),
+                                        Opacity(
+                                          opacity: 0.3,
+                                          child: Icon(Icons.bolt,
+                                              color: Colors.blue[900],
+                                              size: 30),
+                                        ),
+                                        Opacity(
+                                          opacity: 0.3,
+                                          child: Icon(Icons.bolt,
+                                              color: Colors.blue[900],
+                                              size: 30),
+                                        ),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(left: 8.0),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '$numberBeginnerExercises',
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white),
+                                              ),
+                                              Text(
+                                                'Programs',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                              Text(
+                                                'Created',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ProgressTrackingScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                      bottom: 4.0, left: 8.0, top: 4.0),
+                                  decoration: BoxDecoration(
+                                    color: CustomTheme.accentColor2,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.bolt,
+                                            color: Colors.blue[900], size: 30),
+                                        Icon(Icons.bolt,
+                                            color: Colors.blue[900], size: 30),
+                                        Opacity(
+                                          opacity: 0.3,
+                                          child: Icon(Icons.bolt,
+                                              color: Colors.blue[900],
+                                              size: 30),
+                                        ),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(left: 8.0),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '$numberIntermediateExercises',
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white),
+                                              ),
+                                              Text(
+                                                'Programs',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                              Text(
+                                                'Created',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ProgressTrackingScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                      left: 8.0, top: 8.0),
+                                  decoration: BoxDecoration(
+                                    color: CustomTheme.accentColor3,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.bolt,
+                                            color: Colors.blue[900], size: 30),
+                                        Icon(Icons.bolt,
+                                            color: Colors.blue[900], size: 30),
+                                        Icon(Icons.bolt,
+                                            color: Colors.blue[900], size: 30),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(left: 8.0),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '$numberDifficultExercises',
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white),
+                                              ),
+                                              Text(
+                                                'Programs',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                              Text(
+                                                'Created',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              SizedBox(
-                height: 20,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  child: const Text(
+                    'Next consultation',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ),
               ),
-              ElevatedButton(
-                  onPressed: () async {
-                    showGloveRemovedDialog(context);
-                  },
-                  child: Text('press'))
+              nextConsultation != null
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 15),
+                        decoration: BoxDecoration(
+                          color: CustomTheme.accentColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Theme(
+                          data: ThemeData()
+                              .copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            backgroundColor: Colors.transparent,
+                            onExpansionChanged: (bool expanded) {
+                              setState(() {
+                                isExpanded = expanded;
+                              });
+                            },
+                            title: Text(
+                              nextConsultation!.title,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: CustomTheme.accentColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 15.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Date:',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        nextConsultation!.date
+                                            .toLocal()
+                                            .toString(),
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 14),
+                                      ),
+                                      SizedBox(height: 8),
+                                      const Text(
+                                        'Plan:',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        nextConsultation!.treatmentPlan,
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 14),
+                                      ),
+                                      SizedBox(height: 8),
+                                      const Text(
+                                        'Notes:',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        nextConsultation!.notes,
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 14),
+                                      ),
+                                      SizedBox(height: 10),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      child: Center(
+                      child: Text(
+                        'No Consultation available.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  child: const Text(
+                    'Last Training Program Created',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ),
+              ),
+              lastTrainingProgramCreated != null
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      child: FullProgramContainerWidget(
+                          program: lastTrainingProgramCreated!,
+                          title: lastTrainingProgramCreated!.name,
+                          date:
+                              'Done in ${lastTrainingProgramCreated!.date.day} / ${lastTrainingProgramCreated!.date.month} / ${lastTrainingProgramCreated!.date.year}',
+                          subtitle:
+                              '${lastTrainingProgramCreated!.duration} MINS  ●  ${lastTrainingProgramCreated!.exercises.length} EXERCISES',
+                          difficulty: lastTrainingProgramCreated!.category,
+                          user: user,
+                          favoriteTrainingPrograms: favoriteTrainingPrograms,
+                          onFavoriteChanged: _handleFavoriteChanged,
+                          isDone: false),
+                    )
+                  : Container(
+                      child: Center(
+                      child: Text(
+                        'No Program available.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+              ),
+              SizedBox(height: 20,)
             ],
           ),
         ),
       ),
     );
   }
-  void showGloveRemovedDialog(BuildContext context) {
-    // Create a ValueNotifier to manage glove status dynamically
-    ValueNotifier<bool> isGloveOnNotifier = ValueNotifier(false);  // Default to glove off
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Center(
-                child: Text("Ooops, something is wrong"),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Lottie.asset(
-                    'assets/animations/glove_removed.json',
-                    width: 300,
-                    height: 300,
-                    repeat: true,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    "The glove has been removed. Please put it back to continue.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 20),
-                  // Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Exit button
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text("Exit"),
-                      ),
-                      // Continue button (disabled if glove is off)
-                      ValueListenableBuilder<bool>(
-                        valueListenable: isGloveOnNotifier,
-                        builder: (context, isGloveOn, child) {
-                          return ElevatedButton(
-                            onPressed: isGloveOn
-                                ? () {
-                              Navigator.pop(context);
-                            }
-                                : null, // Disabled if glove is not on
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isGloveOn
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey,
-                            ),
-                            child: const Text("Continue"),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    Future.delayed(Duration(seconds: 5), () {
-      isGloveOnNotifier.value = true;
-    });
-  }
-
-
 }

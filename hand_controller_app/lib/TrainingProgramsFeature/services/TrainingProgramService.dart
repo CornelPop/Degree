@@ -18,7 +18,75 @@ class TrainingProgramService {
     }
   }
 
-  // Get a training program by ID
+  Future<List<TrainingProgram>> getAllTrainingProgramsCreatedByDoctorId(String doctorId) async {
+    try {
+      QuerySnapshot querySnapshot = await firestore
+          .collection('trainingPrograms')
+          .where('createdById', isEqualTo: doctorId)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => TrainingProgram.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print("Error getting training programs: $e");
+      return [];
+    }
+  }
+
+  Future<int> getTotalCompletionsForDoctorPrograms(String doctorId) async {
+    try {
+      int totalCompletions = 0;
+
+      QuerySnapshot userSnapshot = await firestore.collection('users').get();
+
+      for (var userDoc in userSnapshot.docs) {
+        final userId = userDoc.id;
+
+        QuerySnapshot completedSnapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('completedPrograms')
+            .get();
+
+        for (var completedDoc in completedSnapshot.docs) {
+          final data = completedDoc.data() as Map<String, dynamic>;
+          final createdById = data['createdById'];
+
+          if (createdById == doctorId) {
+            totalCompletions++;
+          }
+        }
+      }
+
+      return totalCompletions;
+    } catch (e) {
+      print("Error fetching completions: $e");
+      return 0;
+    }
+  }
+
+  Future<TrainingProgram?> getLastTrainingProgramCreatedByDoctor(String doctorId) async {
+    try {
+      QuerySnapshot querySnapshot = await firestore
+          .collection('trainingPrograms')
+          .where('createdById', isEqualTo: doctorId)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        return null;
+      }
+
+      return TrainingProgram.fromMap(
+          querySnapshot.docs.first.data() as Map<String, dynamic>);
+    } catch (e) {
+      print("Error getting last training program created by doctor: $e");
+      return null;
+    }
+  }
+
   Future<TrainingProgram?> getTrainingProgramById(String trainingProgramId) async {
     try {
       DocumentSnapshot docSnapshot = await firestore.collection('trainingPrograms').doc(trainingProgramId).get();
@@ -139,9 +207,7 @@ class TrainingProgramService {
       String userId, TrainingProgram program) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-    print("ajunge inainte");
     program.updateDate(DateTime.now());
-    print("ajunge mijloc");
     try {
       await firestore
           .collection('users')

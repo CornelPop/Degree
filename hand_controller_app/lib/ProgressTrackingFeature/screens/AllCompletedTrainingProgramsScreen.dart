@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hand_controller_app/ProgressTrackingFeature/widgets/DoneProgramContainerWidget.dart';
+import 'package:hand_controller_app/ProgressTrackingFeature/widgets/FullProgramContainerWidget.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import '../../AuthFeature/models/User.dart';
 import '../../AuthFeature/services/AuthService.dart';
@@ -11,9 +11,14 @@ import '../../TrainingProgramsFeature/models/TrainingProgram.dart';
 class AllCompletedTrainingProgramsScreen extends StatefulWidget {
   final List<TrainingProgram> completedPrograms;
   final List<TrainingProgram> favoritePrograms;
-  final User user;
+  final User? user;
+  final void Function(String programId, bool isNowFavorite) onFavoriteChanged;
 
-  const AllCompletedTrainingProgramsScreen({Key? key, required this.completedPrograms, required this.favoritePrograms, required this.user})
+  const AllCompletedTrainingProgramsScreen({Key? key,
+    required this.completedPrograms,
+    required this.favoritePrograms,
+    required this.user,
+    required this.onFavoriteChanged})
       : super(key: key);
 
   @override
@@ -117,6 +122,16 @@ class _AllCompletedTrainingProgramsScreenState extends State<AllCompletedTrainin
         ),
       ),
     );
+  }
+
+  void _handleFavoriteChanged(String programId, bool isNowFavorite) {
+    setState(() {
+      if (isNowFavorite) {
+        widget.favoritePrograms.add(widget.completedPrograms.firstWhere((p) => p.trainingProgramId == programId));
+      } else {
+        widget.favoritePrograms.removeWhere((p) => p.trainingProgramId == programId);
+      }
+    });
   }
 
   @override
@@ -242,17 +257,15 @@ class _AllCompletedTrainingProgramsScreenState extends State<AllCompletedTrainin
                   ],
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSortButton('name', 'Name'),
-                      SizedBox(width: 10),
-                      _buildSortButton('date', 'Date'),
-                      SizedBox(width: 10),
-                      _buildSortButton('duration', 'Duration'),
-                    ],
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildSortButton('name', 'Name'),
+                    SizedBox(width: 10),
+                    _buildSortButton('date', 'Date'),
+                    SizedBox(width: 10),
+                    _buildSortButton('duration', 'Duration'),
+                  ],
                 ),
               ),
             ),
@@ -266,16 +279,18 @@ class _AllCompletedTrainingProgramsScreenState extends State<AllCompletedTrainin
                   final program = widget.completedPrograms[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: DoneProgramContainer(
-                      // userId: widget.user.uid,
-                      // favoriteTrainingPrograms: widget.favoritePrograms,
+                    child: FullProgramContainerWidget(
+                      user: widget.user,
+                      favoriteTrainingPrograms: widget.favoritePrograms,
                       program: program,
                       title: program.name,
+                      isDone: true,
                       date:
                           'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
                       subtitle:
                           '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                       difficulty: program.category,
+                      onFavoriteChanged: _handleFavoriteChanged,
                     ),
                   );
                 },

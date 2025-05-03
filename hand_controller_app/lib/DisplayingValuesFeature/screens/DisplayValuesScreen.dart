@@ -6,6 +6,7 @@ import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import 'package:hand_controller_app/core/widgets/CustomDrawer.dart';
 import 'package:http/http.dart' as http;
 import '../../AlertDialogs/ExitDialogWidget.dart';
+import '../../AuthFeature/models/User.dart';
 import '../../AuthFeature/services/UserService.dart';
 import '../../GlobalThemeData.dart';
 
@@ -126,7 +127,7 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
         return await ExitDialog.showExitDialog(context);
       },
       child: Scaffold(
-        drawer: CustomDrawer(name: name, email: email, selectedTile: 'Display Values'),
+        drawer: CustomDrawer(user: User(uid: '', createdAt: '', name: '', email: '', password: '', role: '', dateOfBirth: '', phoneNumber: '', gender: ''), selectedTile: 'Display Values'),
         body: Stack(
           children: [
             Container(

@@ -119,8 +119,7 @@ class SettingsScreenState extends State<SettingsScreen> {
             if (snapshot.connectionState == ConnectionState.done && user != null) {
               return Scaffold(
                 drawer: CustomDrawer(
-                  name: user!.name,
-                  email: user!.email,
+                  user: user,
                   selectedTile: 'Settings',
                 ),
                 body: settingsContentWidget(),

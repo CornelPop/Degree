@@ -77,6 +77,26 @@ class ConsultationService {
     }
   }
 
+  Future<Consultation?> getNextConsultationForDoctor(String doctorId) async {
+    try {
+      DateTime now = DateTime.now();
+
+      QuerySnapshot querySnapshot = await firestore
+          .collection('consultations')
+          .where('doctorId', isEqualTo: doctorId)
+          .where('date', isGreaterThan: now)
+          .where('accepted', isEqualTo: true)
+          .orderBy('date')
+          .limit(1)
+          .get();
+
+      return Consultation.fromMap(querySnapshot.docs.first.data() as Map<String, dynamic>);
+    } catch (e) {
+      print("Error getting next consultation for doctor: $e");
+      return null;
+    }
+  }
+
   Future<void> addConsultation(Consultation consultation) async {
     try {
       DocumentReference docRef = await firestore

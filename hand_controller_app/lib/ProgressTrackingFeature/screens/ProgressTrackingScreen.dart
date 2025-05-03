@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/services/PdfService.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/LastMonthTotalNumberByCategoryPieChart.dart';
-import 'package:hand_controller_app/ProgressTrackingFeature/widgets/DoneProgramContainerWidget.dart';
+import 'package:hand_controller_app/ProgressTrackingFeature/widgets/FullProgramContainerWidget.dart';
+import 'package:hand_controller_app/TrainingProgramsFeature/screens/CreateTrainingProgramScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/services/TrainingProgramService.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import 'package:hand_controller_app/core/widgets/LoadingWidget.dart';
@@ -40,6 +41,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
 
   List<TrainingProgram> completedPrograms = [];
   List<TrainingProgram> favoritePrograms = [];
+  List<TrainingProgram> createdPrograms = [];
   String _sortBy = 'Date';
   bool _ascending = false;
 
@@ -95,6 +97,8 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
         } else if (role == 'Doctor') {
           doctor = Doctor.fromMap(userData);
           user = doctor;
+          createdPrograms = await trainingProgramService.getAllTrainingProgramsCreatedByDoctorId(uid);
+          print(createdPrograms);
         }
       } else {
         debugPrint('No user data found.');
@@ -119,6 +123,16 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
           comparison = a.date.compareTo(b.date);
       }
       return _ascending ? comparison : -comparison;
+    });
+  }
+
+  void _handleFavoriteChanged(String programId, bool isNowFavorite) {
+    setState(() {
+      if (isNowFavorite) {
+        favoritePrograms.add(completedPrograms.firstWhere((p) => p.trainingProgramId == programId));
+      } else {
+        favoritePrograms.removeWhere((p) => p.trainingProgramId == programId);
+      }
     });
   }
 
@@ -149,11 +163,10 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
             if (snapshot.connectionState == ConnectionState.done && user != null) {
               return Scaffold(
                 drawer: CustomDrawer(
-                  name: user!.name,
-                  email: user!.email,
-                  selectedTile: 'Progress Tracking',
+                  user: user,
+                  selectedTile: 'Program Management',
                 ),
-                body: progressTrackingContentWidget(),
+                body: role == 'Patient' ? progressTrackingContentPatientWidget() : progressTrackingContentDoctorWidget(),
               );
             }
 
@@ -164,7 +177,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
     );
   }
 
-  Widget progressTrackingContentWidget() {
+  Widget progressTrackingContentPatientWidget() {
     return Stack(
       children: [
         Container(
@@ -322,16 +335,18 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
                                 final program = completedPrograms[index];
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: DoneProgramContainer(
-                                    // userId: user!.uid,
-                                    // favoriteTrainingPrograms: favoritePrograms,
+                                  child: FullProgramContainerWidget(
+                                    user: user,
+                                    favoriteTrainingPrograms: favoritePrograms,
                                     program: program,
                                     title: program.name,
                                     date:
                                     'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
                                     subtitle:
                                     '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                                    isDone: true,
                                     difficulty: program.category,
+                                    onFavoriteChanged: _handleFavoriteChanged,
                                   ),
                                 );
                               },
@@ -369,13 +384,18 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
                                       elevation: 0,
                                     ),
                                     onPressed: () {
-                                      // Navigator.push(
-                                      //   context,
-                                      //   MaterialPageRoute(
-                                      //     builder: (context) =>
-                                      //         ShowAllProgramsScreen(user:patient, widget.favoritePrograms: favoritePrograms, completedPrograms: completedPrograms),
-                                      //   ),
-                                      // );
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AllCompletedTrainingProgramsScreen(
+                                                  user: user,
+                                                  favoritePrograms: favoritePrograms,
+                                                  completedPrograms: completedPrograms,
+                                                onFavoriteChanged: _handleFavoriteChanged,
+                                              ),
+                                        ),
+                                      );
                                     },
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -432,5 +452,147 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
       default:
         return Container();
     }
+  }
+
+  Widget progressTrackingContentDoctorWidget() {
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+          ),
+          height: kToolbarHeight + 20,
+        ),
+        Column(
+          children: [
+            AppBarWidget(),
+            Expanded(
+              child: Container(
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(15.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              alignment: Alignment.centerLeft,
+                              child: const Text(
+                                'Programs created:',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Container(
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        CustomTheme.accentColor4,
+                                        CustomTheme.accentColor2,
+                                      ],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 20,
+                                        offset: Offset(0, 0),
+                                      ),
+                                    ],
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  CreateTrainingProgramScreen()));
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      elevation: 0, // Remove elevation
+                                    ),
+                                    child: const Text(
+                                      "+ Add Program",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: ListView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: createdPrograms.length,
+                          itemBuilder: (context, index) {
+                            final program = createdPrograms[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: FullProgramContainerWidget(
+                                user: user,
+                                favoriteTrainingPrograms: favoritePrograms,
+                                program: program,
+                                title: program.name,
+                                isDone: false,
+                                date:
+                                'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
+                                subtitle:
+                                '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                                difficulty: program.category,
+                                onFavoriteChanged: _handleFavoriteChanged,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }

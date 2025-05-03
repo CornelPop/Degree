@@ -53,9 +53,9 @@ class ProgramContainer extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => ProgramDetailsScreen(
-                user: user,
-                isFavorite: isFavorite,
-                program: program,
+              user: user,
+              isFavorite: isFavorite,
+              program: program,
               onFavoriteChanged: onFavoriteChanged,
             ),
           ),

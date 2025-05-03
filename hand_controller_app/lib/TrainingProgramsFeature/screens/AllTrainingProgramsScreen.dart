@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hand_controller_app/ProgressTrackingFeature/widgets/DoneProgramContainerWidget.dart';
+import 'package:hand_controller_app/ProgressTrackingFeature/widgets/FullProgramContainerWidget.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import '../../AuthFeature/models/User.dart';
 import '../../AuthFeature/services/AuthService.dart';
@@ -10,8 +10,10 @@ import '../../TrainingProgramsFeature/models/TrainingProgram.dart';
 
 class AllTrainingProgramsScreen extends StatefulWidget {
   final List<TrainingProgram> programs;
+  final List<TrainingProgram> favoriteTrainingPrograms;
+  final User? user;
 
-  const AllTrainingProgramsScreen({Key? key, required this.programs})
+  const AllTrainingProgramsScreen({Key? key, required this.programs, required this.user, required this.favoriteTrainingPrograms})
       : super(key: key);
 
   @override
@@ -28,7 +30,7 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
 
   late Future<void> _fetchUserDataFuture;
 
-  String _sortField = 'date';
+  String _sortField = 'category';
   bool _isAscending = false;
 
   @override
@@ -67,8 +69,8 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
       widget.programs.sort((a, b) {
         int comparison;
         switch (_sortField) {
-          case 'date':
-            comparison = a.date.compareTo(b.date);
+          case 'category':
+            comparison = a.category.compareTo(b.category);
             break;
           case 'duration':
             comparison = a.duration.compareTo(b.duration);
@@ -197,7 +199,7 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
               child: Container(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Training Programs Completed: ${widget.programs.length}',
+                  'Training Programs Available: ${widget.programs.length}',
                   style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -240,17 +242,15 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
                   ],
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSortButton('name', 'Name'),
-                      SizedBox(width: 10),
-                      _buildSortButton('date', 'Date'),
-                      SizedBox(width: 10),
-                      _buildSortButton('duration', 'Duration'),
-                    ],
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildSortButton('name', 'Name'),
+                    SizedBox(width: 10),
+                    _buildSortButton('category', 'Category'),
+                    SizedBox(width: 10),
+                    _buildSortButton('duration', 'Duration'),
+                  ],
                 ),
               ),
             ),
@@ -264,9 +264,8 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
                   final program = widget.programs[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: DoneProgramContainer(
-                      //userId: widget.user.uid,
-                      //favoriteTrainingPrograms: ,
+                    child: FullProgramContainerWidget(
+                      user: widget.user,
                       program: program,
                       title: program.name,
                       date:
@@ -274,6 +273,9 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
                       subtitle:
                       '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                       difficulty: program.category,
+                      isDone: false,
+                      favoriteTrainingPrograms: widget.favoriteTrainingPrograms,
+                      onFavoriteChanged: (String programId, bool isNowFavorite) {  },
                     ),
                   );
                 },

@@ -1,29 +1,38 @@
 import 'package:flutter/material.dart';
 
+import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
 import '../../TrainingProgramsFeature/models/TrainingProgram.dart';
 import '../../TrainingProgramsFeature/screens/ProgramDetailsScreen.dart';
 
-class DoneProgramContainer extends StatelessWidget {
+class FullProgramContainerWidget extends StatelessWidget {
   final TrainingProgram program;
-  //final String userId;
+  final User? user;
   final String title;
   final String date;
   final String subtitle;
   final String difficulty;
-  //final List<TrainingProgram> favoriteTrainingPrograms;
+  final bool isDone;
+  final List<TrainingProgram> favoriteTrainingPrograms;
+  final void Function(String programId, bool isNowFavorite) onFavoriteChanged;
 
-  DoneProgramContainer({
+  FullProgramContainerWidget({
     required this.program,
     required this.title,
     required this.date,
     required this.subtitle,
-    required this.difficulty//, required this.favoriteTrainingPrograms//, required this.userId,
+    required this.difficulty,
+    required this.user,
+    required this.favoriteTrainingPrograms,
+    required this.onFavoriteChanged,
+    required this.isDone
   });
 
   @override
   Widget build(BuildContext context) {
-    //bool isFavorite = favoriteTrainingPrograms.contains(program);
+    bool isFavorite = favoriteTrainingPrograms.any(
+          (p) => p.trainingProgramId == program.trainingProgramId,
+    );
     Color? iconColor;
     List<double> opacities;
     Color bgColor;
@@ -44,12 +53,17 @@ class DoneProgramContainer extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (context) => ProgramDetailsScreen(userId:userId, isFavorite: isFavorite, program: program),
-        //   ),
-        // );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProgramDetailsScreen(
+              user: user,
+              isFavorite: isFavorite,
+              program: program,
+              onFavoriteChanged: onFavoriteChanged,
+            ),
+          ),
+        );
       },
       child: Container(
         height: MediaQuery.of(context).size.height * 0.15,
@@ -62,7 +76,7 @@ class DoneProgramContainer extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(title, style: TextStyle(color: Colors.white),),
-            Text(date, style: TextStyle(color: Colors.white),),
+            isDone ? Text(date, style: TextStyle(color: Colors.white),) : Container(),
             Text(subtitle, style: TextStyle(color: Colors.white),),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

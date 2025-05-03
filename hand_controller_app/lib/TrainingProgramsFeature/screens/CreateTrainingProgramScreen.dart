@@ -227,11 +227,6 @@ class CreateTrainingProgramScreenState
             if (snapshot.connectionState == ConnectionState.done &&
                 user != null) {
               return Scaffold(
-                drawer: CustomDrawer(
-                  name: user!.name,
-                  email: user!.email,
-                  selectedTile: '',
-                ),
                 body: createTrainingProgramWidget(),
               );
             }
