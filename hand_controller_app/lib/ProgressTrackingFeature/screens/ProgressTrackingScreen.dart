@@ -164,7 +164,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
               return Scaffold(
                 drawer: CustomDrawer(
                   user: user,
-                  selectedTile: 'Program Management',
+                  selectedTile: role == 'Doctor' ? 'Program Management' : 'Progress Tracking',
                 ),
                 body: role == 'Patient' ? progressTrackingContentPatientWidget() : progressTrackingContentDoctorWidget(),
               );
@@ -559,7 +559,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(15.0),
                         child: ListView.builder(
                           physics: NeverScrollableScrollPhysics(),
                           shrinkWrap: true,

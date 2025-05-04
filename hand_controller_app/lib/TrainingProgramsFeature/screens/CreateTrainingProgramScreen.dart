@@ -189,6 +189,7 @@ class CreateTrainingProgramScreenState
                           builder: (context) => ReviewTrainingProgramScreen(
                             trainingProgramExercises: trainingProgramExercises,
                             userId: user!.uid,
+                            isEdit: false,
                           ),
                         ),
                       );
@@ -333,41 +334,26 @@ class CreateTrainingProgramScreenState
                         margin: EdgeInsets.symmetric(vertical: 6),
                         color: Colors.white.withOpacity(0.1),
                         key: Key('$index'),
-                        child: Slidable(
-                            //key: Key('$index'),
-                            endActionPane: ActionPane(
-                              extentRatio: 0.35,
-                              motion: StretchMotion(),
-                              children: [
-                                SlidableAction(
-                                  onPressed: ((context) {}),
-                                  icon: Icons.favorite,
-                                  backgroundColor: Colors.yellow.shade700,
-                                  foregroundColor: Colors.white,
-                                  label: 'Favorite',
+                        child: ExerciseTileWidget(
+                          exercise: filteredExercises[index],
+                          onAddExercise: (exercise, repetitions) {
+                            setState(() {
+                              trainingProgramExercises.add(
+                                Exercise(
+                                  exerciseId: exercise.exerciseId,
+                                  name: exercise.name,
+                                  description: exercise.description,
+                                  numberOfTimes: repetitions,
+                                  targetValues: exercise.targetValues,
+                                  animationPath: exercise.animationPath
                                 ),
-                              ],
-                            ),
-                            child: ExerciseTileWidget(
-                              exercise: filteredExercises[index],
-                              onAddExercise: (exercise, repetitions) {
-                                setState(() {
-                                  trainingProgramExercises.add(
-                                    Exercise(
-                                      exerciseId: exercise.exerciseId,
-                                      name: exercise.name,
-                                      description: exercise.description,
-                                      numberOfTimes: repetitions,
-                                      targetValues: exercise.targetValues,
-                                    ),
-                                  );
-                                });
-
-                                print(
-                                    'Added ${exercise.name} with $repetitions reps!');
-                                print(trainingProgramExercises);
-                              },
-                            )),
+                              );
+                            });
+                            print(
+                                'Added ${exercise.name} with $repetitions reps!');
+                            print(trainingProgramExercises);
+                          },
+                        ),
                       );
                     },
                   ),

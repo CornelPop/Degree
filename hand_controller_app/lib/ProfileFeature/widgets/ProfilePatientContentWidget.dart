@@ -11,6 +11,7 @@ import 'package:slide_to_act/slide_to_act.dart';
 import '../../AuthFeature/models/Doctor.dart';
 import '../../AuthFeature/services/UserService.dart';
 import '../../GlobalThemeData.dart';
+import '../../NotificationFeature/services/NotificationService.dart';
 import '../models/Consultation.dart';
 
 class ProfilePatientContentWidget extends StatefulWidget {

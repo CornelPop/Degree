@@ -36,6 +36,38 @@ class UserService {
     }
   }
 
+  Future<Patient?> getPatientData(String uid) async {
+    try {
+      DocumentSnapshot documentSnapshot =
+      await _firestore.collection('users').doc(uid).get();
+      if (documentSnapshot.exists) {
+        return Patient.fromMap(documentSnapshot.data() as Map<String, dynamic>);
+      } else {
+        print('User does not exist in Firestore.');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      return null;
+    }
+  }
+
+  Future<Doctor?> getDoctorData(String uid) async {
+    try {
+      DocumentSnapshot documentSnapshot =
+      await _firestore.collection('users').doc(uid).get();
+      if (documentSnapshot.exists) {
+        return Doctor.fromMap(documentSnapshot.data() as Map<String, dynamic>);
+      } else {
+        print('User does not exist in Firestore.');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      return null;
+    }
+  }
+
   Future<void> storeUserUid(String uid) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('uid', uid);

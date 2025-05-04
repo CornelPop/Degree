@@ -16,7 +16,6 @@ Future<void> main() async{
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await NotificationService().initNotifications();
-  tz.initializeTimeZones();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
 

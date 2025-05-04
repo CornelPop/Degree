@@ -33,11 +33,18 @@ class NotificationService {
 
   Future<void> scheduleAppointmentNotification({int id = 0, String? title, String? body, required DateTime scheduledNotificationDateTime}) async {
 
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(
+      scheduledNotificationDateTime,
+      tz.local,
+    );
+
+    print("Scheduling notification for: $scheduledDate");
+
     return notificationsPlugin.zonedSchedule(
         id,
         title,
         body,
-        tz.TZDateTime.from(scheduledNotificationDateTime, tz.local),
+        scheduledDate,
         notificationDetails(),
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

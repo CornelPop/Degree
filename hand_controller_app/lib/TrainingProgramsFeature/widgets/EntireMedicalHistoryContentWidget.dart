@@ -90,6 +90,7 @@ class _EntireMedicalHistoryContentWidgetState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: 10,),
                       const Text(
                         'Name:',
                         style: TextStyle(
@@ -100,11 +101,12 @@ class _EntireMedicalHistoryContentWidgetState
                       ),
                       Text(
                         widget.patient.name,
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 14),
                       ),
                       SizedBox(height: 8),
                       const Text(
-                        'Age:',
+                        'Gender:',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -112,12 +114,13 @@ class _EntireMedicalHistoryContentWidgetState
                         ),
                       ),
                       Text(
-                        widget.patient.name,
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        widget.patient.gender,
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 14),
                       ),
                       SizedBox(height: 8),
                       const Text(
-                        'Name:',
+                        'Date of Birth:',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -125,9 +128,39 @@ class _EntireMedicalHistoryContentWidgetState
                         ),
                       ),
                       Text(
-                        widget.patient.name,
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        widget.patient.dateOfBirth,
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 14),
                       ),
+                      SizedBox(height: 8),
+                      const Text(
+                        'Phone:',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        widget.patient.phoneNumber,
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 14),
+                      ),
+                      SizedBox(height: 8),
+                      const Text(
+                        'Email:',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        widget.patient.email,
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 14),
+                      ),
+                      SizedBox(height: 10,)
                     ],
                   ),
                 ),

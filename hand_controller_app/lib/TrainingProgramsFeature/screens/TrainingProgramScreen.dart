@@ -2,14 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
-import 'package:hand_controller_app/NotificationFeature/services/NotificationService.dart';
 import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
-import 'package:hand_controller_app/ProgressTrackingFeature/screens/AllCompletedTrainingProgramsScreen.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/screens/ProgressTrackingScreen.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/FullProgramContainerWidget.dart';
-import 'package:hand_controller_app/TrainingProgramsFeature/screens/CreateTrainingProgramScreen.dart';
-import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireMedicalHistoryScreen.dart';
-import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireProgressTrackingScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/services/TrainingProgramService.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
 import 'package:hand_controller_app/core/widgets/CustomDrawer.dart';
@@ -20,10 +15,8 @@ import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
 import '../../ProfileFeature/models/Consultation.dart';
 import '../../core/widgets/LoadingWidget.dart';
-import '../models/MockDataTrainingPrograms.dart';
 import '../models/TrainingProgram.dart';
 import '../widgets/ProgramContainerWidget.dart';
-import 'package:lottie/lottie.dart';
 
 import 'AllTrainingProgramsScreen.dart';
 
@@ -54,6 +47,11 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   int numberBeginnerExercises = 0;
   int numberIntermediateExercises = 0;
   int numberDifficultExercises = 0;
+
+  int numberBeginnerProgramsCreated = 0;
+  int numberIntermediateProgramsCreated = 0;
+  int numberDifficultProgramsCreated = 0;
+
   int timeSpentInWorkouts = 0;
   int totalCompletions = 0;
   double accuracyOfExercises = 0.0;
@@ -69,11 +67,6 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
 
   late String userId;
 
-  String _searchByField = 'name';
-  String _orderByField = 'name';
-  bool _isAscending = true;
-  String _searchedString = '';
-
   List<TrainingProgram> favoriteTrainingPrograms = [];
   List<TrainingProgram> trainingPrograms = [];
   List<TrainingProgram> beginnerTrainingPrograms = [];
@@ -81,6 +74,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   List<TrainingProgram> difficultTrainingPrograms = [];
 
   Consultation? nextConsultation;
+  Patient? nextPatient;
   bool isExpanded = false;
 
   TrainingProgram? lastTrainingProgramCreated;
@@ -95,135 +89,6 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   void initState() {
     super.initState();
     _fetchUserDataFuture = fetchUserData();
-  }
-
-  void _applyFilters() {
-    setState(() {
-      filteredPatients = patients.where((doctor) {
-        String valueToSearch = '';
-        switch (_searchByField) {
-          case 'name':
-            valueToSearch = doctor.name;
-            break;
-          case 'specialization':
-            //valueToSearch = doctor.specialization;
-            break;
-        }
-        return valueToSearch
-            .toLowerCase()
-            .contains(_searchedString.toLowerCase());
-      }).toList();
-
-      if (_orderByField.isNotEmpty) {
-        filteredPatients.sort((a, b) {
-          var valueA = '';
-          var valueB = '';
-          switch (_orderByField) {
-            case 'name':
-              valueA = a.name.toLowerCase();
-              valueB = b.name.toLowerCase();
-              break;
-            case 'rating':
-              //valueA = a.rating.toString();
-              //valueB = b.rating.toString();
-              break;
-          }
-          return _isAscending
-              ? valueA.compareTo(valueB)
-              : valueB.compareTo(valueA);
-        });
-      }
-    });
-  }
-
-  Widget _buildOrderByButton(String field, String label) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (_orderByField == field) {
-            _isAscending = !_isAscending;
-          } else {
-            _orderByField = field;
-            _isAscending = true;
-          }
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: _orderByField == field
-              ? CustomTheme.accentColor2
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: _orderByField == field ? Colors.white : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            if (_orderByField == field)
-              Icon(
-                _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                color: Colors.white,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchByButton(String field, String label) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _searchByField = field;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: _searchByField == field
-              ? CustomTheme.accentColor2
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: _searchByField == field ? Colors.white : Colors.transparent,
-          ),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _filterBySearchField(String searchText) {
-    setState(() {
-      filteredPatients = patients.where((patient) {
-        String valueToSearch = '';
-        switch (_searchByField) {
-          case 'name':
-            valueToSearch = patient.name;
-            break;
-          case 'specialization':
-            //valueToSearch = patient.;
-            break;
-        }
-        return valueToSearch.toLowerCase().contains(searchText.toLowerCase());
-      }).toList();
-    });
   }
 
   void _handleFavoriteChanged(String programId, bool isNowFavorite) {
@@ -259,6 +124,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
       patient = Patient.fromMap(userData);
       user = patient;
       trainingPrograms = await trainingProgramService.getAllTrainingPrograms();
+      print(trainingPrograms);
       favoriteTrainingPrograms =
           await trainingProgramService.getFavoriteTrainingPrograms(uid);
 
@@ -279,21 +145,26 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
       timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int;
       accuracyOfExercises = userData['accuracyOfExercises'] as double;
     } else if (role == 'Doctor') {
-      doctor = Doctor.fromMap(userData);
-      user = doctor;
-      totalCompletions = await trainingProgramService
-          .getTotalCompletionsForDoctorPrograms(uid);
-      nextConsultation =
-          await consultationService.getNextConsultationForDoctor(uid);
-      lastTrainingProgramCreated = await trainingProgramService
-          .getLastTrainingProgramCreatedByDoctor(uid);
+        doctor = Doctor.fromMap(userData);
+        user = doctor;
+        totalCompletions = await trainingProgramService
+            .getTotalCompletionsForDoctorPrograms(uid);
+        nextConsultation =
+            await consultationService.getNextConsultationForDoctor(uid);
+        nextPatient = (await userService.getPatientData(nextConsultation!.patientId));
+        lastTrainingProgramCreated = await trainingProgramService
+            .getLastTrainingProgramCreatedByDoctor(uid);
 
-      userId = uid;
-      List<dynamic> patientsLocal =
-          await userService.getPatientsByDoctorId(uid);
-      patients = patientsLocal.cast<Patient>();
-      filteredPatients = patients;
-      _isExpandedList = List.generate(patients.length, (_) => false);
+        numberBeginnerProgramsCreated = await trainingProgramService.countProgramsByDoctorAndCategory(doctorId: uid, category: 'Beginner');
+        numberIntermediateProgramsCreated = await trainingProgramService.countProgramsByDoctorAndCategory(doctorId: uid, category: 'Intermediate');
+        numberDifficultProgramsCreated = await trainingProgramService.countProgramsByDoctorAndCategory(doctorId: uid, category: 'Difficult');
+
+        userId = uid;
+        List<dynamic> patientsLocal =
+            await userService.getPatientsByDoctorId(uid);
+        patients = patientsLocal.cast<Patient>();
+        filteredPatients = patients;
+        _isExpandedList = List.generate(patients.length, (_) => false);
     }
   }
 
@@ -416,31 +287,6 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ElevatedButton(
-                          onPressed: () {
-                            final now = DateTime.now();
-                            final scheduleTime = now
-                                .add(Duration(seconds: 20)); // 30 seconds later
-                            NotificationService().showNotification(
-                                title: "Merge", body: "Merge");
-                            NotificationService()
-                                .scheduleAppointmentNotification(
-                                    title: 'Salut',
-                                    body: 'Salut',
-                                    scheduledNotificationDateTime:
-                                        scheduleTime);
-                          },
-                          child: Text("Send noti")),
-                      ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CreateTrainingProgramScreen(),
-                              ),
-                            );
-                          },
-                          child: Text("Create training program")),
                       const Opacity(
                         opacity: 0.7,
                         child: Text(
@@ -1159,7 +1005,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                '$numberBeginnerExercises',
+                                                '$numberBeginnerProgramsCreated',
                                                 style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.bold,
@@ -1226,7 +1072,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                '$numberIntermediateExercises',
+                                                '$numberIntermediateProgramsCreated',
                                                 style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.bold,
@@ -1289,7 +1135,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                '$numberDifficultExercises',
+                                                '$numberDifficultProgramsCreated',
                                                 style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.bold,
@@ -1366,56 +1212,73 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 15.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Date:',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Name:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        nextConsultation!.date
-                                            .toLocal()
-                                            .toString(),
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 14),
-                                      ),
-                                      SizedBox(height: 8),
-                                      const Text(
-                                        'Plan:',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                        Text(
+                                          nextPatient!.name,
+                                          style: TextStyle(
+                                              color: Colors.white, fontSize: 14),
                                         ),
-                                      ),
-                                      Text(
-                                        nextConsultation!.treatmentPlan,
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 14),
-                                      ),
-                                      SizedBox(height: 8),
-                                      const Text(
-                                        'Notes:',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                        SizedBox(height: 8,),
+                                        const Text(
+                                          'Date:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        nextConsultation!.notes,
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 14),
-                                      ),
-                                      SizedBox(height: 10),
-                                    ],
+                                        Text(
+                                          nextConsultation!.date
+                                              .toLocal()
+                                              .toString(),
+                                          style: TextStyle(
+                                              color: Colors.white, fontSize: 14),
+                                        ),
+                                        SizedBox(height: 8),
+                                        const Text(
+                                          'Plan:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          nextConsultation!.treatmentPlan,
+                                          style: TextStyle(
+                                              color: Colors.white, fontSize: 14),
+                                        ),
+                                        SizedBox(height: 8),
+                                        const Text(
+                                          'Notes:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          nextConsultation!.notes,
+                                          style: TextStyle(
+                                              color: Colors.white, fontSize: 14),
+                                        ),
+                                        SizedBox(height: 10),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

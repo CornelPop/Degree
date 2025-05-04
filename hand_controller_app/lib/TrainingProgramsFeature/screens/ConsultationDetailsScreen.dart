@@ -1,20 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AlertDialogs/ErrorDialogWidget.dart';
 import 'package:hand_controller_app/AuthFeature/models/Patient.dart';
-import 'package:hand_controller_app/AuthFeature/services/SharedPrefService.dart';
 import 'package:hand_controller_app/ProfileFeature/models/Consultation.dart';
 import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
-import 'package:hand_controller_app/ProfileFeature/services/RatingService.dart';
-import 'package:hand_controller_app/ProfileFeature/widgets/ProfileDoctorContentWidget.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/EntireMedicalHistoryScreen.dart';
 import 'package:hand_controller_app/core/widgets/AppBarWidget.dart';
-import '../../AuthFeature/services/AuthService.dart';
-import '../../AuthFeature/services/UserService.dart';
-import '../../AlertDialogs/ExitDialogWidget.dart';
 import '../../GlobalThemeData.dart';
-import '../widgets/EntireMedicalHistoryContentWidget.dart';
 
 class ConsultationDetailsScreen extends StatefulWidget {
   final String doctorId;
@@ -373,8 +364,6 @@ class _ConsultationDetailsScreenState extends State<ConsultationDetailsScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    print('object');
-
                                     String errors = '';
                                     if (dateController.text.isEmpty) {
                                       errors += 'Please enter a date\n';
@@ -408,13 +397,14 @@ class _ConsultationDetailsScreenState extends State<ConsultationDetailsScreen> {
                                                 title: titleController.text,
                                                 notes: notesController.text,
                                                 treatmentPlan: treatmentPlanController.text,
-                                                location: ''));
+                                                location: locationController.text));
+
                                       } else {
                                         widget.consultation.title = titleController.text;
                                         widget.consultation.date = dateController.text as DateTime;
                                         widget.consultation.treatmentPlan = treatmentPlanController.text;
                                         widget.consultation.notes = notesController.text;
-                                        //widget.consultation.location =
+                                        widget.consultation.location = locationController.text;
                                         consultationService.updateConsultation(widget.consultation);
                                       }
                                     }

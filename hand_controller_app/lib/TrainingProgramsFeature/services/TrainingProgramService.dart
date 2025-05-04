@@ -103,6 +103,25 @@ class TrainingProgramService {
     }
   }
 
+  Future<int> countProgramsByDoctorAndCategory({
+    required String doctorId,
+    required String category,
+  }) async {
+    try {
+      QuerySnapshot querySnapshot = await firestore
+          .collection('trainingPrograms')
+          .where('createdById', isEqualTo: doctorId)
+          .where('category', isEqualTo: category)
+          .get();
+
+      return querySnapshot.size;
+    } catch (e) {
+      print('Error counting training programs: $e');
+      return 0;
+    }
+  }
+
+
   // Add a new training program
   Future<void> addTrainingProgram(TrainingProgram trainingProgram) async {
     try {
@@ -168,16 +187,17 @@ class TrainingProgramService {
 
       return querySnapshot.docs
           .map((doc) => TrainingProgram.fromMap(doc.data() as Map<String, dynamic>))
-          .toList();    } catch (e) {
+          .toList();
+    } catch (e) {
       print("Error getting favorite training programs: $e");
       return [];
     }
   }
 
   // Update an existing training program
-  Future<void> updateTrainingProgram(String trainingProgramId, TrainingProgram trainingProgramDetails) async {
+  Future<void> updateTrainingProgram(TrainingProgram trainingProgramDetails) async {
     try {
-      await firestore.collection('trainingPrograms').doc(trainingProgramId).update(trainingProgramDetails.toMap());
+      await firestore.collection('trainingPrograms').doc(trainingProgramDetails.trainingProgramId).update(trainingProgramDetails.toMap());
     } catch (e) {
       print("Error updating training program: $e");
     }

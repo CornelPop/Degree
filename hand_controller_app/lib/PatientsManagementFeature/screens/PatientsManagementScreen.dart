@@ -73,14 +73,14 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
 
   void _applyFilters() {
     setState(() {
-      filteredPatients = patients.where((doctor) {
+      filteredPatients = patients.where((patient) {
         String valueToSearch = '';
         switch (_searchByField) {
           case 'name':
-            valueToSearch = doctor.name;
+            valueToSearch = patient.name;
             break;
-          case 'specialization':
-          //valueToSearch = doctor.specialization;
+          case 'email':
+            valueToSearch = patient.email;
             break;
         }
         return valueToSearch
@@ -98,8 +98,8 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
               valueB = b.name.toLowerCase();
               break;
             case 'rating':
-            //valueA = a.rating.toString();
-            //valueB = b.rating.toString();
+              valueA = a.email.toString();
+              valueB = b.email.toString();
               break;
           }
           return _isAscending
@@ -191,8 +191,8 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
           case 'name':
             valueToSearch = patient.name;
             break;
-          case 'specialization':
-          //valueToSearch = patient.;
+          case 'email':
+            valueToSearch = patient.email;
             break;
         }
         return valueToSearch.toLowerCase().contains(searchText.toLowerCase());
@@ -396,7 +396,7 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                 ),
               ),
               SizedBox(
-                height: 20,
+                height: 10,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -443,7 +443,7 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                                         children: [
                                           _buildSearchByButton('name', 'Name'),
                                           _buildSearchByButton(
-                                              'rating', 'Rating'),
+                                              'email', 'Email'),
                                         ],
                                       ),
                                     ),
@@ -464,7 +464,7 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                                         MainAxisAlignment.spaceAround,
                                         children: [
                                           _buildOrderByButton('name', 'Name'),
-                                          _buildOrderByButton('rating', 'Rating'),
+                                          _buildOrderByButton('email', 'Email'),
                                         ],
                                       ),
                                     ),
@@ -577,9 +577,7 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                   ),
                 ),
               ),
-              const SizedBox(
-                height: 50,
-              ),
+              SizedBox(height: 10,),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15.0),
                 child: ListView.builder(
@@ -620,7 +618,7 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Email:',
+                                      'Name:',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
@@ -628,13 +626,13 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                                       ),
                                     ),
                                     Text(
-                                      patient.email,
+                                      patient.name,
                                       style: TextStyle(
                                           color: Colors.white, fontSize: 14),
                                     ),
                                     SizedBox(height: 8),
                                     const Text(
-                                      'Email:',
+                                      'Gender:',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
@@ -642,7 +640,35 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                                       ),
                                     ),
                                     Text(
-                                      patient.email,
+                                      patient.gender,
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                    SizedBox(height: 8),
+                                    const Text(
+                                      'Date of Birth:',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      patient.dateOfBirth,
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                    SizedBox(height: 8),
+                                    const Text(
+                                      'Phone:',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      patient.phoneNumber,
                                       style: TextStyle(
                                           color: Colors.white, fontSize: 14),
                                     ),

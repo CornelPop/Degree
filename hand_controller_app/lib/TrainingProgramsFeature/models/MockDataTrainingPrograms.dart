@@ -9,6 +9,7 @@ List<TrainingProgram> getTrainingPrograms() {
     description: '',
     numberOfTimes: 10,
     targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
+    animationPath: ''
   );
 
   Exercise exercise2 = Exercise(
@@ -17,6 +18,7 @@ List<TrainingProgram> getTrainingPrograms() {
     description: '',
     numberOfTimes: 10,
     targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
+    animationPath: ''
   );
 
   Exercise exercise3 = Exercise(
@@ -25,6 +27,7 @@ List<TrainingProgram> getTrainingPrograms() {
     description: '',
     numberOfTimes: 10,
     targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
+    animationPath: ''
   );
 
   DateTime now = DateTime.now();

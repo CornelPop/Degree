@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/ReviewTrainingProgramScreen.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../AuthFeature/models/Doctor.dart';
 import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
+import '../../core/widgets/LoadingWidget.dart';
 import '../models/TrainingProgram.dart';
 import '../services/TrainingProgramService.dart';
 import 'StartTrainingProgramScreen.dart';
@@ -15,13 +18,13 @@ class ProgramDetailsScreen extends StatefulWidget {
   final bool isFavorite;
   final void Function(String programId, bool isNowFavorite) onFavoriteChanged;
 
-  const ProgramDetailsScreen(
-      {Key? key,
-      required this.program,
-      required this.isFavorite,
-      required this.user,
-      required this.onFavoriteChanged})
-      : super(key: key);
+  const ProgramDetailsScreen({
+    Key? key,
+    required this.program,
+    required this.isFavorite,
+    required this.user,
+    required this.onFavoriteChanged,
+  }) : super(key: key);
 
   @override
   ProgramDetailsScreenState createState() => ProgramDetailsScreenState();
@@ -31,11 +34,20 @@ class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
   late Color bgContainer;
   final TrainingProgramService trainingProgramService =
       TrainingProgramService();
+  final UserService userService = UserService();
   late bool isFave;
+
+  Doctor? doctor;
+  late Future<void> _fetchDataFuture;
+
+  Future<void> fetchData() async {
+    doctor = await userService.getDoctorData(widget.program.createdById);
+  }
 
   @override
   void initState() {
     super.initState();
+    _fetchDataFuture = fetchData();
     isFave = widget.isFavorite;
   }
 
@@ -69,70 +81,26 @@ class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
       bgContainer = CustomTheme.accentColor3;
     }
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              CustomTheme.mainColor2,
-              CustomTheme.mainColor,
-            ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-        ),
-        child: CustomScrollView(
-          physics: BouncingScrollPhysics(),
-          slivers: <Widget>[
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: 150.0,
-              stretch: true,
-              leading: IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+    return FutureBuilder(
+        future: _fetchDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const LoadingWidget();
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'An error occurred: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
               ),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    isFave ? Icons.star : Icons.star_border,
-                    color: Colors.yellow,
-                  ),
-                  onPressed: _toggleFavorite,
-                ),
-                widget.user!.role == 'Doctor'
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.delete,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: () async {
-                          await trainingProgramService.deleteTrainingProgram(widget.program.trainingProgramId);
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
-                                (Route<dynamic> route) => false,
-                          );
-                        },
-                      )
-                    : Container(),
-                IconButton(
-                  icon: Icon(
-                    Icons.question_mark,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-              backgroundColor: Colors.transparent,
-              flexibleSpace: Container(
-                decoration: const BoxDecoration(
+            );
+          }
+
+          if (snapshot.connectionState == ConnectionState.done && doctor != null) {
+            return Scaffold(
+              body: Container(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       CustomTheme.mainColor2,
@@ -142,185 +110,278 @@ class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                     end: Alignment.centerRight,
                   ),
                 ),
-                child: FlexibleSpaceBar(
-                  centerTitle: true,
-                  title: Text(
-                    widget.program.name,
-                    style: TextStyle(fontSize: 18.0, color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 10),
-                    Container(
-                      height: 50,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: CustomTheme.accentColor4,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${widget.program.duration} MINS  ●  ${widget.program.exercises.length} EXERCISES',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                child: CustomScrollView(
+                  physics: BouncingScrollPhysics(),
+                  slivers: <Widget>[
+                    SliverAppBar(
+                      pinned: true,
+                      expandedHeight: 150.0,
+                      stretch: true,
+                      leading: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
                         ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
                       ),
-                    ),
-                    SizedBox(height: 5),
-                    widget.program.exercises.isEmpty
-                        ? Center(child: Text('No exercises available'))
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: widget.program.exercises.length,
-                            itemBuilder: (context, index) {
-                              final exercise = widget.program.exercises[index];
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: bgContainer,
-                                  borderRadius: BorderRadius.circular(12),
+                      actions: [
+                        widget.user!.role == 'Patient'
+                            ? IconButton(
+                                icon: Icon(
+                                  isFave ? Icons.star : Icons.star_border,
+                                  color: Colors.yellow,
                                 ),
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(35.0),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Icon(Icons.bolt,
-                                          color: Colors.blue[900], size: 35),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            exercise.name,
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Text(
-                                            'x${exercise.numberOfTimes}',
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.white),
-                                          ),
-                                        ],
-                                      ),
-                                      // Icon(Icons.bolt,
-                                      //     color: Colors.blue[900], size: 35),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(50),
-                                        child: Lottie.asset(
-                                          "assets/animations/fist_open.json",
-                                          width: 75,
-                                          height: 75,
-                                          fit: BoxFit.fill,
-                                        ),
-                                      )
-                                    ],
-                                  ),
+                                onPressed: _toggleFavorite,
+                              )
+                            : Container(),
+                        widget.user!.role == 'Doctor'
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.delete,
+                                  color: Colors.redAccent,
                                 ),
-                              );
-                            },
+                                onPressed: () async {
+                                  await trainingProgramService
+                                      .deleteTrainingProgram(
+                                          widget.program.trainingProgramId);
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            TrainingProgramScreen()),
+                                    (Route<dynamic> route) => false,
+                                  );
+                                },
+                              )
+                            : Container(),
+                        IconButton(
+                          icon: Icon(
+                            Icons.question_mark,
+                            color: Colors.white,
                           ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-        ),
-        child: BottomAppBar(
-          elevation: 0,
-          color: Colors.transparent,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    CustomTheme.accentColor4,
-                    CustomTheme.accentColor2,
-                  ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: Offset(0, 0),
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => widget.user!.role == 'Patient'
-                          ? StartTrainingProgramScreen(
-                              user: widget.user, program: widget.program)
-                          : ReviewTrainingProgramScreen(
-                              trainingProgramExercises:
-                                  widget.program.exercises,
-                              userId: widget.user!.uid),
-                    ),
-                  );
-                },
-                child: widget.user!.role == 'Patient'
-                    ? const Text(
-                        'Start Program',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
                         ),
-                      )
-                    : const Text(
-                        'Edit Program',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      ],
+                      backgroundColor: Colors.transparent,
+                      flexibleSpace: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              CustomTheme.mainColor2,
+                              CustomTheme.mainColor,
+                            ],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                        ),
+                        child: FlexibleSpaceBar(
+                          centerTitle: true,
+                          title: Text(
+                            widget.program.name,
+                            style:
+                                TextStyle(fontSize: 18.0, color: Colors.white),
+                          ),
                         ),
                       ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 10),
+                            Container(
+                              height: 75,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: CustomTheme.accentColor4,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '${widget.program.duration} MINS  ●  ${widget.program.exercises.length} EXERCISES',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    ),
+                                    Text(
+                                      'CREATED BY: ${doctor!.name.toUpperCase()}',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 5),
+                            widget.program.exercises.isEmpty
+                                ? Center(child: Text('No exercises available'))
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: widget.program.exercises.length,
+                                    itemBuilder: (context, index) {
+                                      final exercise =
+                                          widget.program.exercises[index];
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          color: bgContainer,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 8.0),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(35.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Icon(Icons.bolt,
+                                                  color: Colors.blue[900],
+                                                  size: 35),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    exercise.name,
+                                                    style: const TextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white),
+                                                  ),
+                                                  const SizedBox(height: 5),
+                                                  Text(
+                                                    'x${exercise.numberOfTimes}',
+                                                    style: const TextStyle(
+                                                        fontSize: 18,
+                                                        color: Colors.white),
+                                                  ),
+                                                ],
+                                              ),
+                                              // Icon(Icons.bolt,
+                                              //     color: Colors.blue[900], size: 35),
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(50),
+                                                child: Lottie.asset(
+                                                  "assets/animations/fist_to_index_and_middle_up.json",
+                                                  width: 75,
+                                                  height: 75,
+                                                  fit: BoxFit.fill,
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
-    );
+              bottomNavigationBar: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+                child: BottomAppBar(
+                  elevation: 0,
+                  color: Colors.transparent,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            CustomTheme.accentColor4,
+                            CustomTheme.accentColor2,
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 20,
+                            offset: Offset(0, 0),
+                          ),
+                        ],
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  widget.user!.role == 'Patient'
+                                      ? StartTrainingProgramScreen(
+                                          user: widget.user,
+                                          program: widget.program)
+                                      : ReviewTrainingProgramScreen(
+                                          trainingProgramExercises:
+                                              widget.program.exercises,
+                                          userId: widget.user!.uid,
+                                          isEdit: true,
+                                          trainingProgram: widget.program,
+                                        ),
+                            ),
+                          );
+                        },
+                        child: widget.user!.role == 'Patient'
+                            ? const Text(
+                                'Start Program',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Edit Program',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+          return const Center(child: Text('No user data available.'));
+        });
   }
 }

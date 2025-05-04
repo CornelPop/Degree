@@ -57,6 +57,18 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
     }
   }
 
+  void _handleFavoriteChanged(String programId, bool isNowFavorite) {
+    setState(() {
+      if (isNowFavorite) {
+        widget.favoriteTrainingPrograms.add(widget.programs
+            .firstWhere((p) => p.trainingProgramId == programId));
+      } else {
+        widget.favoriteTrainingPrograms
+            .removeWhere((p) => p.trainingProgramId == programId);
+      }
+    });
+  }
+
   void _sortPrograms(String field) {
     setState(() {
       if (_sortField == field) {

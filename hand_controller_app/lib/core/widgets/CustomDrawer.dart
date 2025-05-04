@@ -126,7 +126,7 @@ class CustomDrawer extends StatelessWidget {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => const DisplayValuesScreen()));
               },
             ),
-            buildListTile(
+            user!.role == 'Doctor' ? buildListTile(
               context,
               icon: Icon(Icons.assignment, color: Colors.white),
               text: 'Patient Management',
@@ -136,7 +136,7 @@ class CustomDrawer extends StatelessWidget {
                       (Route<dynamic> route) => false,
                 );
               },
-            ),
+            ) : Container(),
             buildListTile(
               context,
               icon: user!.role == 'Patient' ? Icon(Icons.track_changes, color: Colors.white) : Icon(Icons.view_list, color: Colors.white),

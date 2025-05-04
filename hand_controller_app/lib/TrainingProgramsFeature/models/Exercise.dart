@@ -4,6 +4,7 @@ class Exercise {
   final String description;
   final int numberOfTimes;
   final Map<String, int> targetValues;
+  final String animationPath;
 
   Exercise({
     required this.exerciseId,
@@ -11,6 +12,7 @@ class Exercise {
     required this.description,
     required this.numberOfTimes,
     required this.targetValues,
+    required this.animationPath
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +22,7 @@ class Exercise {
       'description': description,
       'numberOfTimes': numberOfTimes,
       'targetValues': targetValues,
+      'animationPath': animationPath
     };
   }
 
@@ -29,6 +32,7 @@ class Exercise {
       name: map['name'],
       description: map['description'],
       numberOfTimes: map['numberOfTimes'],
+      animationPath: map['animationPath'],
       targetValues: Map<String, int>.from(map['targetValues']),
     );
   }

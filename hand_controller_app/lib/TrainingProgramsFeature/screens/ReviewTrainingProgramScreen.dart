@@ -14,9 +14,15 @@ import '../models/MockDataTrainingPrograms.dart';
 class ReviewTrainingProgramScreen extends StatefulWidget {
   final List<Exercise> trainingProgramExercises;
   final String userId;
+  final bool isEdit;
+  final TrainingProgram? trainingProgram;
 
   const ReviewTrainingProgramScreen(
-      {Key? key, required this.trainingProgramExercises, required this.userId})
+      {Key? key,
+      required this.trainingProgramExercises,
+      required this.userId,
+      this.trainingProgram,
+      required this.isEdit,})
       : super(key: key);
 
   @override
@@ -29,7 +35,6 @@ class ReviewTrainingProgramScreenState
   final TrainingProgramService trainingProgramService =
       TrainingProgramService();
   final ExerciseService exerciseService = ExerciseService();
-
 
   List<TrainingProgram> programs = getTrainingPrograms();
 
@@ -44,107 +49,131 @@ class ReviewTrainingProgramScreenState
   void initState() {
     super.initState();
     exercises = widget.trainingProgramExercises;
+    widget.isEdit == true ? category = widget.trainingProgram!.category : null;
+    widget.isEdit == true ? nameController.text = widget.trainingProgram!.name : null;
+    widget.isEdit == true
+        ? durationController.text = widget.trainingProgram!.duration.toString()
+        : null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [CustomTheme.mainColor2, CustomTheme.mainColor],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
           ),
-        ),
-        child: BottomAppBar(
-          elevation: 0,
-          color: Colors.transparent,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    CustomTheme.accentColor4,
-                    CustomTheme.accentColor2,
+          child: BottomAppBar(
+            elevation: 0,
+            color: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      CustomTheme.accentColor4,
+                      CustomTheme.accentColor2,
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: Offset(0, 0),
+                    ),
                   ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: Offset(0, 0),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 0,
                   ),
-                ],
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: () async {
+                  onPressed: () async {
+                    String errors = '';
 
-                  String errors = '';
+                    if (nameController.text.isEmpty) {
+                      errors += 'Please enter the name.\n';
+                    }
 
-                  if (nameController.text.isEmpty) {
-                    errors += 'Please enter the name.\n';
-                  }
+                    if (durationController.text.isEmpty) {
+                      errors += 'Please enter the duration.\n';
+                    }
 
-                  if (durationController.text.isEmpty) {
-                    errors += 'Please enter the duration.\n';
-                  }
+                    if (category == '') {
+                      errors += 'Please select a category.\n';
+                    }
 
-                  if (category == '') {
-                    errors += 'Please select a category.\n';
-                  }
+                    if (errors.isNotEmpty) {
+                      ErrorDialogWidget(message: errors.trim())
+                          .showErrorDialog(context);
+                      return;
+                    } else {
+                      widget.isEdit == false
+                          ? await trainingProgramService.addTrainingProgram(
+                              TrainingProgram(
+                                  trainingProgramId: '',
+                                  name: nameController.text,
+                                  duration: int.parse(durationController.text),
+                                  category: category,
+                                  exercises: exercises,
+                                  date: DateTime.now(),
+                                  createdAt: DateTime.now(),
+                                  createdById: widget.userId))
+                          : await trainingProgramService.updateTrainingProgram(
+                              TrainingProgram(
+                                  trainingProgramId: widget.trainingProgram!.trainingProgramId,
+                                  name: nameController.text,
+                                  duration: int.parse(durationController.text),
+                                  category: category,
+                                  exercises: exercises,
+                                  date: DateTime.now(),
+                                  createdAt: DateTime.now(),
+                                  createdById: widget.userId));
 
-                  if (errors.isNotEmpty) {
-                    ErrorDialogWidget(message: errors.trim())
-                        .showErrorDialog(context);
-                    return;
-                  } else {
-
-                    await trainingProgramService.addTrainingProgram(TrainingProgram(
-                        trainingProgramId: '',
-                        name: nameController.text,
-                        duration: int.parse(durationController.text),
-                        category: category,
-                        exercises: exercises,
-                        date: DateTime.now(),
-                        createdAt: DateTime.now(),
-                        createdById: widget.userId));
-
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                          builder: (context) => const TrainingProgramScreen()),
-                          (Route<dynamic> route) => false,
-                    );
-                  }
-                },
-                child: const Text(
-                  'Create Program',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const TrainingProgramScreen()),
+                        (Route<dynamic> route) => false,
+                      );
+                    }
+                  },
+                  child: widget.isEdit == false
+                      ? const Text(
+                          'Create Program',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Update Program',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-      body: reviewTrainingProgramWidget()
-    );
+        body: reviewTrainingProgramWidget());
   }
 
   Widget reviewTrainingProgramWidget() {
@@ -164,7 +193,9 @@ class ReviewTrainingProgramScreenState
             ),
             Column(
               children: [
-                AppBarWidget(leadingIcon: Icons.arrow_back,),
+                AppBarWidget(
+                  leadingIcon: Icons.arrow_back,
+                ),
               ],
             ),
           ],
@@ -207,19 +238,6 @@ class ReviewTrainingProgramScreenState
                           key: Key('$index'),
                           child: Slidable(
                             //key: Key('$index'),
-                            endActionPane: ActionPane(
-                              extentRatio: 0.35,
-                              motion: StretchMotion(),
-                              children: [
-                                SlidableAction(
-                                  onPressed: ((context) {}),
-                                  icon: Icons.favorite,
-                                  backgroundColor: Colors.yellow.shade700,
-                                  foregroundColor: Colors.white,
-                                  label: 'Favorite',
-                                ),
-                              ],
-                            ),
                             startActionPane: ActionPane(
                               extentRatio: 0.35,
                               motion: StretchMotion(),
@@ -232,7 +250,9 @@ class ReviewTrainingProgramScreenState
                                       });
                                     } else {
                                       ErrorDialogWidget(
-                                          message: 'You need to add at least 5 exercises. You can remove anymore.').showErrorDialog(context);
+                                              message:
+                                                  'You need to add at least 5 exercises. You can remove anymore.')
+                                          .showErrorDialog(context);
                                     }
                                   }),
                                   icon: Icons.delete,
@@ -309,7 +329,8 @@ class ReviewTrainingProgramScreenState
                       controller: nameController,
                       decoration: const InputDecoration(
                         labelText: 'Name of the program',
-                        prefixIcon: Icon(Icons.fitness_center, color: Colors.white),
+                        prefixIcon:
+                            Icon(Icons.fitness_center, color: Colors.white),
                         labelStyle: TextStyle(color: Colors.white),
                         border: InputBorder.none,
                       ),
@@ -344,7 +365,8 @@ class ReviewTrainingProgramScreenState
                       controller: durationController,
                       decoration: const InputDecoration(
                         labelText: 'Duration of the program',
-                        prefixIcon: Icon(Icons.access_time, color: Colors.white),
+                        prefixIcon:
+                            Icon(Icons.access_time, color: Colors.white),
                         labelStyle: TextStyle(color: Colors.white),
                         border: InputBorder.none,
                       ),
@@ -418,7 +440,6 @@ class ReviewTrainingProgramScreenState
                                     ),
                                   ),
                                 ),
-
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {

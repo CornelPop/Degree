@@ -4,6 +4,7 @@ import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.
 import 'package:slide_to_act/slide_to_act.dart';
 
 import '../../GlobalThemeData.dart';
+import '../../NotificationFeature/services/NotificationService.dart';
 
 class CustomSlideAction extends StatefulWidget {
 
@@ -19,6 +20,7 @@ class CustomSlideAction extends StatefulWidget {
 class _CustomSlideActionState extends State<CustomSlideAction> {
 
   final ConsultationService consultationService = ConsultationService();
+  final NotificationService notificationService = NotificationService();
 
   String text = 'Slide to confirm.';
   bool enabled = true;
@@ -62,7 +64,36 @@ class _CustomSlideActionState extends State<CustomSlideAction> {
             enabled = false;
           });
 
-          await consultationService.updateConsultationField(widget.consultation.consultationId, 'accepted', true);
+          await consultationService.updateConsultationField(
+              widget.consultation.consultationId, 'accepted', true);
+          final consultationDate = widget.consultation.date.toLocal();
+          final now = DateTime.now();
+
+          final int consultationTimeSeconds = consultationDate
+              .millisecondsSinceEpoch ~/ 1000;
+          final int nowSeconds = now.millisecondsSinceEpoch ~/ 1000;
+
+          final int secondsUntilConsultation = consultationTimeSeconds -
+              nowSeconds;
+
+          final int secondsUntil24hNotification = secondsUntilConsultation -
+              (24 * 60 * 60);
+          final int secondsUntil1hNotification = secondsUntilConsultation -
+              (1 * 60 * 60);
+
+          notificationService.scheduleAppointmentNotification(
+            id: 1,
+            title: 'Reminder: Consultation in 24 hours',
+            body: 'You have a consultation scheduled in 24 hours.',
+            scheduledNotificationDateTime: DateTime.now().add(Duration(seconds: secondsUntil24hNotification)),
+          );
+
+          notificationService.scheduleAppointmentNotification(
+            id: 2,
+            title: 'Reminder: Consultation in 1 hour',
+            body: 'You have a consultation scheduled in 1 hour.',
+            scheduledNotificationDateTime: DateTime.now().add(Duration(seconds: secondsUntil1hNotification)),
+          );
 
         },
         enabled: enabled,
