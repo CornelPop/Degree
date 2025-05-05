@@ -1,102 +1,72 @@
 import 'Exercise.dart';
-import 'TrainingProgram.dart';
 
-List<TrainingProgram> getTrainingPrograms() {
+List<Exercise> getExercises() {
+
+  const int highTargetValue = 2700;
+  const int lowTargetValue = 1900;
 
   Exercise exercise1 = Exercise(
     exerciseId: '',
-    name: 'Fingers Flex',
+    name: 'Fist to index up',
     description: '',
     numberOfTimes: 10,
-    targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
-    animationPath: ''
+    targetValues: {'Thumb': highTargetValue, 'Index': lowTargetValue, 'Middle': highTargetValue, 'Ring': highTargetValue, 'Pinky': highTargetValue},
+    animationPath: 'assets/animations/fist_to_index_up.json'
   );
 
   Exercise exercise2 = Exercise(
     exerciseId: '',
-    name: 'Fingers Relax',
+    name: 'Fist to open palm',
     description: '',
     numberOfTimes: 10,
-    targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
-    animationPath: ''
+    targetValues: {'Thumb': lowTargetValue, 'Index': lowTargetValue, 'Middle': lowTargetValue, 'Ring': lowTargetValue, 'Pinky': lowTargetValue},
+    animationPath: 'assets/animations/fist_open.json'
   );
 
   Exercise exercise3 = Exercise(
     exerciseId: '',
-    name: 'Index middle up',
+    name: 'Fist to index and middle up',
     description: '',
     numberOfTimes: 10,
-    targetValues: {'Thumb': 2700, 'Index': 2700, 'Middle': 2700, 'Ring': 2700, 'Pinky': 2700},
-    animationPath: ''
+    targetValues: {'Thumb': highTargetValue, 'Index': lowTargetValue, 'Middle': lowTargetValue, 'Ring': highTargetValue, 'Pinky': highTargetValue},
+    animationPath: 'assets/animations/fist_to_index_and_middle_up.json'
   );
 
-  DateTime now = DateTime.now();
-
-  TrainingProgram program1 = TrainingProgram(
-    createdById: '',
-    trainingProgramId: '',
-    name: 'Beginner Program',
-    duration: 10,
-    exercises: [exercise1, ],
-    category: 'Beginner',
-    date: now,
-    createdAt: now
+  Exercise exercise4 = Exercise(
+    exerciseId: '',
+    name: 'Open hand to index up',
+    description: '',
+    numberOfTimes: 10,
+    targetValues: {'Thumb': highTargetValue, 'Index': lowTargetValue, 'Middle': highTargetValue, 'Ring': highTargetValue, 'Pinky': highTargetValue},
+    animationPath: 'assets/animations/open_hand_to_index_up.json'
   );
 
-  TrainingProgram program2 = TrainingProgram(
-    trainingProgramId: '',
-    name: 'Beginner Program',
-    category: 'Beginner',
-    duration: 10,
-    date: now,
-    createdAt: now,
-    createdById: '',
-    exercises: [exercise1, exercise1, exercise1, exercise1],
+  Exercise exercise5 = Exercise(
+    exerciseId: '',
+    name: 'Open hand to index, middle and ring up',
+    description: '',
+    numberOfTimes: 10,
+    targetValues: {'Thumb': highTargetValue, 'Index': lowTargetValue, 'Middle': lowTargetValue, 'Ring': lowTargetValue, 'Pinky': highTargetValue},
+    animationPath: 'assets/animations/open_hand_to_index_middle_ring_up.json'
   );
 
-  TrainingProgram program3 = TrainingProgram(
-    trainingProgramId: '',
-    name: 'Intermediate Program',
-    category: 'Intermediate',
-    duration: 15,
-    createdAt: now,
-    createdById: '',
-    date: now,
-    exercises: [exercise1, exercise2, exercise1, exercise2],
+  Exercise exercise6 = Exercise(
+    exerciseId: '',
+    name: 'Fist to thumb up',
+    description: '',
+    numberOfTimes: 10,
+    targetValues: {'Thumb': lowTargetValue, 'Index': lowTargetValue, 'Middle': lowTargetValue, 'Ring': lowTargetValue, 'Pinky': highTargetValue},
+    animationPath: 'assets/animations/fist_to_thumb_up.json'
   );
 
-  TrainingProgram program4 = TrainingProgram(
-    trainingProgramId: '',
-    name: 'Intermediate Program',
-    category: 'Intermediate',
-    duration: 15,
-    createdAt: now,
-    createdById: '',
-    date: now,
-    exercises: [exercise1, exercise2, exercise1, exercise2],
+  Exercise exercise7 = Exercise(
+    exerciseId: '',
+    name: 'Fist to index, middle and ring up',
+    description: '',
+    numberOfTimes: 10,
+    targetValues: {'Thumb': lowTargetValue, 'Index': lowTargetValue, 'Middle': lowTargetValue, 'Ring': lowTargetValue, 'Pinky': highTargetValue},
+    animationPath: 'assets/animations/fist_to_index_middle_ring_up.json'
   );
 
-  TrainingProgram program5 = TrainingProgram(
-    trainingProgramId: '',
-    name: 'Difficult Program',
-    category: 'Difficult',
-    duration: 20,
-    createdAt: now,
-    createdById: '',
-    date: now,
-    exercises: [exercise1, exercise2, exercise1, exercise2, exercise1, exercise2],
-  );
-
-  TrainingProgram program6 = TrainingProgram(
-    trainingProgramId: '',
-    name: 'Difficult Program',
-    category: 'Difficult',
-    duration: 20,
-    createdAt: now,
-    createdById: '',
-    date: now,
-    exercises: [exercise1, exercise2, exercise1, exercise2, exercise1, exercise2],
-  );
-
-  return [program1, program2, program3, program4, program5, program6];
+  return [exercise1, exercise2, exercise3, exercise4, exercise5, exercise6, exercise7];
 }

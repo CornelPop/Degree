@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/TrainingProgramScreen.dart';
-import 'package:hand_controller_app/TrainingProgramsFeature/widgets/CountdownTimerWidget.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/widgets/ProgressBarWidget.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 
 import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
@@ -16,7 +16,7 @@ class StartTrainingProgramScreen extends StatefulWidget {
   final TrainingProgram program;
   final User? user;
 
-  StartTrainingProgramScreen({Key? key, required this.program, required this.user}) : super(key: key);
+  const StartTrainingProgramScreen({Key? key, required this.program, required this.user}) : super(key: key);
 
   @override
   _StartTrainingProgramScreenState createState() => _StartTrainingProgramScreenState();
@@ -26,11 +26,14 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   Timer? _countdownTimer;
   Timer? _flexReadingTimer;
   final Stopwatch _stopwatchEntireProgram = Stopwatch();
+
   late AnimationController _animationController;
   late Animation<double> _animation;
-  int _currentTime = 1;
+
+  int _currentTime = 30;
   int _currentExerciseIndex = -1;
   bool _isExerciseActive = false;
+  bool _isPreparing = true;
 
   final UserService userService = UserService();
   final TrainingProgramService trainingProgramService = TrainingProgramService();
@@ -62,12 +65,21 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   void initState() {
     super.initState();
     uid = widget.user!.uid;
+
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(seconds: 30),
     );
+
     _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_animationController);
-    _startCountdown();
+
+    _animationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _animationController.reset();
+      }
+    });
+
+    _startPreparationCountdown();
   }
 
   @override
@@ -85,18 +97,28 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     _stopwatchEntireProgram.stop();
   }
 
-  void _startCountdown() {
+  // New method for the preparation countdown
+  void _startPreparationCountdown() {
     _cancelExistingTimers();
+    setState(() {
+      _isPreparing = true;
+      _currentTime = 30; // 30 seconds to get ready
+    });
+
     _animationController.reset();
+    _animationController.duration = const Duration(seconds: 30);
     _animationController.forward();
+
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _currentTime--;
-        if (_currentTime == 0) {
-          _cancelExistingTimers();
-          _startExercise();
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _currentTime--;
+          if (_currentTime == 0) {
+            _cancelExistingTimers();
+            _startExercise();
+          }
+        });
+      }
     });
   }
 
@@ -142,7 +164,6 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     return null;
   }
 
-
   Map<String, dynamic> calculatePrecisions(Map<String, int> targetValues, Map<String, int> userValues) {
     Map<String, double> fingerPrecisions = {};
     double totalPrecision = 0;
@@ -151,7 +172,6 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     targetValues.forEach((finger, target) {
       int actual = userValues[finger] ?? 0;
 
-      // Calculate precision based on the ratio, adjusted to the range 1800-2800
       double ratio = (actual - 1800) / (target - 1800);
       double precision = 100 - ((ratio - 1).abs() * 100);
       precision = precision.clamp(0.0, 100.0);
@@ -169,16 +189,18 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     };
   }
 
-
   void _startExercise() {
     if (_isExerciseActive) return;
     _isExerciseActive = true;
 
     setState(() {
+      _isPreparing = false;
       _currentExerciseIndex++;
-      _currentTime = 1;
+      _currentTime = 30; // Changed to 30 seconds per exercise
     });
 
+    // Reset animation with new duration
+    _animationController.duration = const Duration(seconds: 30);
     _animationController.reset();
     _animationController.forward();
 
@@ -209,7 +231,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
             Map<String, int> targetValues =
                 widget.program.exercises[_currentExerciseIndex].targetValues;
 
-            Map<String, int> userValues = Map<String, int>.from(currentFlexValues); // Use latest values
+            Map<String, int> userValues = Map<String, int>.from(currentFlexValues);
 
             precisions = calculatePrecisions(targetValues, userValues);
 
@@ -240,11 +262,17 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
         final screenWidth = MediaQuery.of(context).size.width;
 
         return AlertDialog(
-          title: const Text("Program Completed"),
+          title: const Text(
+            "Program Completed",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
-          content: Container(
+          content: SizedBox(
             width: screenWidth * 0.8,
             height: screenHeight * 0.4,
             child: Scrollbar(
@@ -254,35 +282,43 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Congratulations! You have completed the program."),
+                    const Text(
+                      "Congratulations! You have completed the program.",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 20),
                     ProgressBarWidget(
-                      percentage: precisions['overallPrecision'],
+                      percentage: precisions['overallPrecision'] ?? 0,
                       text: 'Accuracy for this program',
                       rounded: true,
                     ),
+                    const SizedBox(height: 10),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Thumb'],
+                      percentage: precisions['fingerPrecisions']['Thumb'] ?? 0,
                       text: 'Thumb',
                       rounded: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Index'],
+                      percentage: precisions['fingerPrecisions']['Index'] ?? 0,
                       text: 'Index',
                       rounded: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Middle'],
+                      percentage: precisions['fingerPrecisions']['Middle'] ?? 0,
                       text: 'Middle',
                       rounded: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Ring'],
+                      percentage: precisions['fingerPrecisions']['Ring'] ?? 0,
                       text: 'Ring',
                       rounded: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Pinky'],
+                      percentage: precisions['fingerPrecisions']['Pinky'] ?? 0,
                       text: 'Pinky',
                       rounded: false,
                     ),
@@ -299,7 +335,20 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                       (Route<dynamic> route) => false,
                 );
               },
-              child: const Text("OK"),
+              style: TextButton.styleFrom(
+                backgroundColor: CustomTheme.accentColor2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -310,7 +359,6 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   Future<void> _updateExerciseCounter(String category, int? timeSpent) async {
     Map<String, dynamic>? userData = await userService.getUserData(uid);
     if (userData != null) {
-
       timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int? ?? 0;
       timeSpentInWorkouts += timeSpent ?? 0;
       await userService.updateUserField(uid, 'timeSpentInWorkouts', timeSpentInWorkouts);
@@ -329,18 +377,22 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
         await userService.updateUserField(uid, 'numberDifficultExercises', numberDifficultExercises);
       }
     }
-    }
+  }
 
   Future<void> _addTrainingProgramToCompleted(TrainingProgram trainingProgram) async {
     await trainingProgramService.addCompletedProgram(uid, trainingProgram);
-    }
+  }
+
+  String _formatTime(int seconds) {
+    return '${seconds.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient Background for the Top Container
+          // App bar background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -369,88 +421,226 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                     ),
                   ),
                   child: Center(
-                    child: _currentExerciseIndex == -1
-                        ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Get ready to start the program!",
-                          style: TextStyle(fontSize: 24, color: Colors.white),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        CountdownTimer(currentTime: _currentTime, animation: _animation),
-                      ],
-                    )
-                        : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          widget.program.exercises[_currentExerciseIndex].name,
-                          style: const TextStyle(fontSize: 24, color: Colors.white),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        CountdownTimer(currentTime: _currentTime, animation: _animation),
-                        const SizedBox(height: 20),
-                        Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                CustomTheme.accentColor4,
-                                CustomTheme.accentColor2,
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 20,
-                                offset: Offset(0, 0),
-                              ),
-                            ],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              _cancelExistingTimers();
-                              if (_currentExerciseIndex < widget.program.exercises.length - 1) {
-                                _isExerciseActive = false;
-                                _startExercise();
-                              } else {
-                                _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
-                                await trainingProgramService.addCompletedProgram(uid, widget.program);
-                                _showCompletionDialog();
-                                _cancelExistingTimers();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent, // Make the button background transparent
-                              shadowColor: Colors.transparent, // Remove the shadow
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30), // Match the border radius of the container
-                              ),
-                              elevation: 0, // Remove elevation
-                            ),
-                            child: const Text(
-                              "Next Exercise",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white, // Set text color to white
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
+                    child: _isPreparing
+                        ? _buildPreparationPhase()
+                        : _buildExercisePhase(),
                   ),
                 ),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreparationPhase() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            "Get ready to start the program!",
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 24,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 30),
+          Container(
+            width: 150,
+            height: 150,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 125,
+                    height: 125,
+                    child: CircularProgressIndicator(
+                      value: _animation.value,
+                      strokeWidth: 10,
+                      backgroundColor: Colors.white.withOpacity(0.3),
+                      valueColor: const AlwaysStoppedAnimation<Color>(CustomTheme.accentColor2),
+                    ),
+                  ),
+                  Text(
+                    _formatTime(_currentTime),
+                    style: const TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          const Text(
+            "Make sure the glove is on the right position",
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExercisePhase() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            widget.program.exercises[_currentExerciseIndex].name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 24,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            'x${widget.program.exercises[_currentExerciseIndex].numberOfTimes}',
+            style: const TextStyle(
+              fontSize: 24,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+
+          // Exercise animation
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(50),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: Lottie.asset(
+                widget.program.exercises[_currentExerciseIndex].animationPath,
+                width: 200,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: 125,
+            height: 125,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(75),
+            ),
+            child: Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: CircularProgressIndicator(
+                      value: _animation.value,
+                      strokeWidth: 10,
+                      backgroundColor: Colors.white.withOpacity(0.3),
+                      valueColor: const AlwaysStoppedAnimation<Color>(CustomTheme.accentColor2),
+                    ),
+                  ),
+                  Text(
+                    _formatTime(_currentTime),
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+
+          // Next exercise button
+          Container(
+            width: 200,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  CustomTheme.accentColor4,
+                  CustomTheme.accentColor2,
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 0),
+                ),
+              ],
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: ElevatedButton(
+              onPressed: () async {
+                _cancelExistingTimers();
+                if (_currentExerciseIndex < widget.program.exercises.length - 1) {
+                  _isExerciseActive = false;
+                  _startExercise();
+                } else {
+                  _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
+                  await trainingProgramService.addCompletedProgram(uid, widget.program);
+                  _showCompletionDialog();
+                  _cancelExistingTimers();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Skip to Next",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          )
         ],
       ),
     );

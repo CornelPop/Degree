@@ -44,7 +44,7 @@ class CreateTrainingProgramScreenState
   TextEditingController searchController = TextEditingController();
 
   final List<int> _items = List<int>.generate(50, (int index) => index);
-  List<TrainingProgram> programs = getTrainingPrograms();
+  List<Exercise> exercises = getExercises();
 
   late List<Exercise> filteredExercises;
 
@@ -72,8 +72,7 @@ class CreateTrainingProgramScreenState
 
   void _filterBySearchField(String query) {
     setState(() {
-      filteredExercises = programs[0]
-          .exercises
+      filteredExercises = exercises
           .where((exercise) =>
               exercise.name.toLowerCase().contains(query.toLowerCase()))
           .toList();
@@ -84,7 +83,7 @@ class CreateTrainingProgramScreenState
   void initState() {
     super.initState();
     _fetchUserDataFuture = fetchUserData();
-    filteredExercises = List.from(programs[0].exercises);
+    filteredExercises = List.from(exercises);
   }
 
   Future<void> fetchUserData() async {

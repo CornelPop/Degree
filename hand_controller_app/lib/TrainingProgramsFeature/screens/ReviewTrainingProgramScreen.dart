@@ -36,8 +36,6 @@ class ReviewTrainingProgramScreenState
       TrainingProgramService();
   final ExerciseService exerciseService = ExerciseService();
 
-  List<TrainingProgram> programs = getTrainingPrograms();
-
   User? user;
 
   String category = '';

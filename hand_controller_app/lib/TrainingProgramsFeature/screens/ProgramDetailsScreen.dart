@@ -236,48 +236,40 @@ class ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                                       return Container(
                                         decoration: BoxDecoration(
                                           color: bgContainer,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0),
+                                        margin: const EdgeInsets.symmetric(vertical: 8.0),
                                         child: Padding(
                                           padding: const EdgeInsets.all(35.0),
                                           child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Icon(Icons.bolt,
-                                                  color: Colors.blue[900],
-                                                  size: 35),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    exercise.name,
-                                                    style: const TextStyle(
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      exercise.name,
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle(
                                                         fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.white),
-                                                  ),
-                                                  const SizedBox(height: 5),
-                                                  Text(
-                                                    'x${exercise.numberOfTimes}',
-                                                    style: const TextStyle(
-                                                        fontSize: 18,
-                                                        color: Colors.white),
-                                                  ),
-                                                ],
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    Text(
+                                                      'x${exercise.numberOfTimes}',
+                                                      style: const TextStyle(fontSize: 18, color: Colors.white),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                              // Icon(Icons.bolt,
-                                              //     color: Colors.blue[900], size: 35),
                                               ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(50),
+                                                borderRadius: BorderRadius.circular(50),
                                                 child: Lottie.asset(
-                                                  "assets/animations/fist_to_index_and_middle_up.json",
+                                                  exercise.animationPath,
                                                   width: 75,
                                                   height: 75,
                                                   fit: BoxFit.fill,

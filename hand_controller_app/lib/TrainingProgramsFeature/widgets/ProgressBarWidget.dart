@@ -21,12 +21,9 @@ class ProgressBarWidget extends StatefulWidget {
 class _ProgressBarWidgetState extends State<ProgressBarWidget> {
   @override
   Widget build(BuildContext context) {
-    // Convert the raw value to a decimal between 0 and 1
-    // For example, 18.23242342 becomes 0.182
     final decimal = widget.percentage / 100;
     final normalizedPercent = decimal.clamp(0.0, 1.0);
 
-    // Format to one decimal place for display (e.g., 18.2%)
     final displayPercent = widget.percentage.toStringAsFixed(1);
 
     if (!widget.rounded) {
