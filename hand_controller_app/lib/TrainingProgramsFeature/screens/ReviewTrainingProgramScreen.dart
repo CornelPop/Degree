@@ -129,7 +129,8 @@ class ReviewTrainingProgramScreenState
                                   exercises: exercises,
                                   date: DateTime.now(),
                                   createdAt: DateTime.now(),
-                                  createdById: widget.userId))
+                                  allValuesTakenForAccuracy: [],
+                                  createdById: widget.userId),)
                           : await trainingProgramService.updateTrainingProgram(
                               TrainingProgram(
                                   trainingProgramId: widget.trainingProgram!.trainingProgramId,
@@ -139,6 +140,7 @@ class ReviewTrainingProgramScreenState
                                   exercises: exercises,
                                   date: DateTime.now(),
                                   createdAt: DateTime.now(),
+                                  allValuesTakenForAccuracy: [],
                                   createdById: widget.userId));
 
                       Navigator.of(context).pushAndRemoveUntil(

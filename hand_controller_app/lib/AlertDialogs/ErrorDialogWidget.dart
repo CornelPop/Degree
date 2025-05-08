@@ -23,7 +23,7 @@ class ErrorDialogWidget {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(false);
+              Navigator.of(context).pop(true);
             },
             child: const Text("Ok", style: TextStyle(color: Colors.white),),
           ),

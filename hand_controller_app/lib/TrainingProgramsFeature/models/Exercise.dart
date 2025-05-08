@@ -4,6 +4,7 @@ class Exercise {
   final String description;
   final int numberOfTimes;
   final Map<String, int> targetValues;
+  final Map<String, int> baseValues;
   final String animationPath;
 
   Exercise({
@@ -12,6 +13,7 @@ class Exercise {
     required this.description,
     required this.numberOfTimes,
     required this.targetValues,
+    required this.baseValues,
     required this.animationPath
   });
 
@@ -22,6 +24,7 @@ class Exercise {
       'description': description,
       'numberOfTimes': numberOfTimes,
       'targetValues': targetValues,
+      'baseValues': baseValues,
       'animationPath': animationPath
     };
   }
@@ -34,6 +37,7 @@ class Exercise {
       numberOfTimes: map['numberOfTimes'],
       animationPath: map['animationPath'],
       targetValues: Map<String, int>.from(map['targetValues']),
+      baseValues: Map<String, int>.from(map['baseValues']),
     );
   }
 }

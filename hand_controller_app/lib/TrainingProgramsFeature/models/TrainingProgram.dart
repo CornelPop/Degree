@@ -10,6 +10,7 @@ class TrainingProgram {
   DateTime date;
   DateTime createdAt;
   final List<Exercise> exercises;
+  final List<List<Map<String, int>>> allValuesTakenForAccuracy;
 
   TrainingProgram({
     required this.trainingProgramId,
@@ -20,6 +21,7 @@ class TrainingProgram {
     required this.date,
     required this.createdById,
     required this.createdAt,
+    required this.allValuesTakenForAccuracy,
   });
 
   void updateDate(DateTime newDate) {
@@ -36,8 +38,12 @@ class TrainingProgram {
       'createdAt': Timestamp.fromDate(createdAt),
       'duration': duration,
       'exercises': exercises.map((e) => e.toMap()).toList(),
+      'allValuesTakenForAccuracy': allValuesTakenForAccuracy.map((repList) {
+        return {'repetition': repList.map((map) => Map<String, dynamic>.from(map)).toList()};
+      }).toList(),
     };
   }
+
 
   static TrainingProgram fromMap(Map<String, dynamic> map) {
     return TrainingProgram(
@@ -49,6 +55,17 @@ class TrainingProgram {
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       duration: map['duration'],
       exercises: List<Exercise>.from(map['exercises'].map((e) => Exercise.fromMap(e))),
+      allValuesTakenForAccuracy: map['allValuesTakenForAccuracy'] != null
+          ? List<List<Map<String, int>>>.from(
+        (map['allValuesTakenForAccuracy'] as List).map(
+              (entry) => List<Map<String, int>>.from(
+            (entry['repetition'] as List).map(
+                  (m) => Map<String, int>.from(m as Map),
+            ),
+          ),
+        ),
+      )
+          : [],
     );
   }
 }

@@ -6,12 +6,14 @@ class ProgressBarWidget extends StatefulWidget {
   final double percentage;
   final String text;
   final bool rounded;
+  final bool isWhite;
 
   const ProgressBarWidget({
     Key? key,
     required this.percentage,
     required this.text,
     required this.rounded,
+    required this.isWhite,
   }) : super(key: key);
 
   @override
@@ -23,8 +25,10 @@ class _ProgressBarWidgetState extends State<ProgressBarWidget> {
   Widget build(BuildContext context) {
     final decimal = widget.percentage / 100;
     final normalizedPercent = decimal.clamp(0.0, 1.0);
-
     final displayPercent = widget.percentage.toStringAsFixed(1);
+
+    final textColor = widget.isWhite ? Colors.white : Colors.black;
+    final progressColor = widget.isWhite ? Colors.lightBlueAccent : Colors.purple;
 
     if (!widget.rounded) {
       return Column(
@@ -40,20 +44,31 @@ class _ProgressBarWidgetState extends State<ProgressBarWidget> {
                   animationDuration: 500,
                   lineHeight: 20.0,
                   percent: normalizedPercent,
-                  center: Text("$displayPercent%"),
+                  center: Text(
+                    "$displayPercent%",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.0,
+                      color: textColor,
+                    ),
+                  ),
                   barRadius: const Radius.circular(15),
-                  progressColor: Colors.purple,
-                  backgroundColor: Colors.grey[300],
+                  progressColor: progressColor,
+                  backgroundColor: Colors.grey.shade200,
                 );
               },
             ),
           ),
           Text(
-            widget.text,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+            widget.percentage != -1 ? widget.text : "Finger not used",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14.0,
+              color: textColor,
+            ),
             textAlign: TextAlign.center,
           ),
-          Divider()
+          Divider(color: textColor),
         ],
       );
     } else {
@@ -67,18 +82,26 @@ class _ProgressBarWidgetState extends State<ProgressBarWidget> {
             percent: normalizedPercent,
             center: Text(
               "$displayPercent%",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20.0,
+                color: textColor,
+              ),
             ),
             footer: Text(
               widget.text,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14.0,
+                color: textColor,
+              ),
               textAlign: TextAlign.center,
             ),
             circularStrokeCap: CircularStrokeCap.round,
-            progressColor: Colors.purple,
-            backgroundColor: Colors.grey,
+            progressColor: progressColor,
+            backgroundColor: Colors.grey.shade200,
           ),
-          Divider(),
+          Divider(color: textColor),
         ],
       );
     }

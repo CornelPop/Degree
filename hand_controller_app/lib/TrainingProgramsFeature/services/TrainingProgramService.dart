@@ -213,13 +213,26 @@ class TrainingProgramService {
     }
   }
 
-  // Update a specific field of a training program
-  Future<void> updateTrainingProgramField(String trainingProgramId, String field, String value) async {
+  Future<void> updateTrainingProgramField(String trainingProgramId, String field, dynamic value) async {
     try {
       await firestore.collection('trainingPrograms').doc(trainingProgramId).update({field: value});
       print("Updated trainingProgramId field successfully.");
     } catch (e) {
       print("Error updating training program field: $e");
+    }
+  }
+  
+  Future<void> updateAccuracyValuesForCompletedProgram(String userId, TrainingProgram trainingProgram, dynamic value) async {
+    try {
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('completedPrograms')
+          .doc(trainingProgram.trainingProgramId)
+          .update({'allValuesTakenForAccuracy': value});
+      print("Updated accuracy values field successfully.");
+    } catch (e) {
+      print("Error updating training program accuracy values field $e");
     }
   }
 

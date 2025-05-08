@@ -4,6 +4,7 @@ import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
 import '../../TrainingProgramsFeature/models/TrainingProgram.dart';
 import '../../TrainingProgramsFeature/screens/ProgramDetailsScreen.dart';
+import 'ProgramAnalyticsScreen.dart';
 
 class FullProgramContainerWidget extends StatelessWidget {
   final TrainingProgram program;
@@ -16,22 +17,21 @@ class FullProgramContainerWidget extends StatelessWidget {
   final List<TrainingProgram> favoriteTrainingPrograms;
   final void Function(String programId, bool isNowFavorite) onFavoriteChanged;
 
-  FullProgramContainerWidget({
-    required this.program,
-    required this.title,
-    required this.date,
-    required this.subtitle,
-    required this.difficulty,
-    required this.user,
-    required this.favoriteTrainingPrograms,
-    required this.onFavoriteChanged,
-    required this.isDone
-  });
+  FullProgramContainerWidget(
+      {required this.program,
+      required this.title,
+      required this.date,
+      required this.subtitle,
+      required this.difficulty,
+      required this.user,
+      required this.favoriteTrainingPrograms,
+      required this.onFavoriteChanged,
+      required this.isDone});
 
   @override
   Widget build(BuildContext context) {
     bool isFavorite = favoriteTrainingPrograms.any(
-          (p) => p.trainingProgramId == program.trainingProgramId,
+      (p) => p.trainingProgramId == program.trainingProgramId,
     );
     Color? iconColor;
     List<double> opacities;
@@ -71,21 +71,64 @@ class FullProgramContainerWidget extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Text(title, style: TextStyle(color: Colors.white),),
-            isDone ? Text(date, style: TextStyle(color: Colors.white),) : Container(),
-            Text(subtitle, style: TextStyle(color: Colors.white),),
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (index) {
-                return Opacity(
-                  opacity: opacities[index],
-                  child: Icon(Icons.bolt, color: iconColor, size: 30),
-                );
-              }),
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(color: Colors.white),
+                ),
+                isDone
+                    ? Text(
+                        date,
+                        style: TextStyle(color: Colors.white),
+                      )
+                    : Container(),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: Colors.white),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    return Opacity(
+                      opacity: opacities[index],
+                      child: Icon(Icons.bolt, color: iconColor, size: 30),
+                    );
+                  }),
+                ),
+              ],
+            ),
+            Positioned(
+              right: 16,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white70, // White background
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.arrow_forward_ios, color: bgColor),
+                    tooltip: 'See more details',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProgramAnalyticsScreen(
+                            trainingProgram: program,
+                            user: user,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -93,4 +136,3 @@ class FullProgramContainerWidget extends StatelessWidget {
     );
   }
 }
-

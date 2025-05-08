@@ -344,6 +344,7 @@ class CreateTrainingProgramScreenState
                                   description: exercise.description,
                                   numberOfTimes: repetitions,
                                   targetValues: exercise.targetValues,
+                                  baseValues: exercise.baseValues,
                                   animationPath: exercise.animationPath
                                 ),
                               );

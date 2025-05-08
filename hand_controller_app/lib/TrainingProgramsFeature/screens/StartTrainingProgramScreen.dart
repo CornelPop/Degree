@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hand_controller_app/AlertDialogs/ErrorDialogWidget.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/screens/TrainingProgramScreen.dart';
 import 'package:hand_controller_app/TrainingProgramsFeature/widgets/ProgressBarWidget.dart';
@@ -9,6 +10,7 @@ import 'package:lottie/lottie.dart';
 import '../../AuthFeature/models/User.dart';
 import '../../GlobalThemeData.dart';
 import '../../core/widgets/AppBarWidget.dart';
+import '../models/Exercise.dart';
 import '../models/TrainingProgram.dart';
 import '../services/TrainingProgramService.dart';
 
@@ -23,8 +25,17 @@ class StartTrainingProgramScreen extends StatefulWidget {
 }
 
 class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen> with TickerProviderStateMixin {
+  List<List<Map<String, int>>> allValuesTakenForAccuracy = [];
+  Map<String, double> finalAccuracy = {};
+
   Timer? _countdownTimer;
   Timer? _flexReadingTimer;
+
+  bool isGloveActive = false;
+  bool isGloveMounted = true;
+
+  bool isInBasePosition = false;
+
   final Stopwatch _stopwatchEntireProgram = Stopwatch();
 
   late AnimationController _animationController;
@@ -33,6 +44,10 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   int _currentTime = 30;
   int _currentExerciseIndex = -1;
   bool _isExerciseActive = false;
+
+  int repetitions = 0;
+  double accuracy = 0.0;
+
   bool _isPreparing = true;
 
   final UserService userService = UserService();
@@ -97,29 +112,89 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     _stopwatchEntireProgram.stop();
   }
 
-  // New method for the preparation countdown
+  int lastFlexSum = 0;
+  final int someThreshold = 0;
+
+  void startFlexMonitoring() {
+    DateTime lastActivityTime = DateTime.now();
+    bool wasActive = false;
+
+    _flexReadingTimer = Timer.periodic(const Duration(milliseconds: 250), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        _flexReadingTimer = null;
+        return;
+      }
+
+      final flexValues = await readFlexSensor();
+
+      if (flexValues != null) {
+        final currentSum = flexValues.values.reduce((a, b) => a + b);
+
+        if (currentSum > someThreshold) {
+          lastActivityTime = DateTime.now();
+          if (!wasActive) {
+            wasActive = true;
+            if (mounted) {
+              setState(() {
+                isGloveActive = true;
+              });
+            }
+          }
+        }
+      }
+
+      final timeSinceLastActivity = DateTime.now().difference(lastActivityTime);
+      if (wasActive && timeSinceLastActivity > const Duration(seconds: 2)) {
+        wasActive = false;
+        setState(() {
+          isGloveActive = false;
+        });
+      }
+    });
+  }
+
   void _startPreparationCountdown() {
     _cancelExistingTimers();
     setState(() {
       _isPreparing = true;
-      _currentTime = 30; // 30 seconds to get ready
+      _currentTime = 30;
     });
 
     _animationController.reset();
     _animationController.duration = const Duration(seconds: 30);
     _animationController.forward();
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _currentTime--;
-          if (_currentTime == 0) {
-            _cancelExistingTimers();
-            _startExercise();
+    startFlexMonitoring();
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted) return;
+
+      _currentTime--;
+
+      setState(() {});
+
+      if (_currentTime == 0) {
+        _cancelExistingTimers();
+
+        if (isGloveActive && isGloveMounted) {
+          _startExercise();
+        } else {
+          final retry = await ErrorDialogWidget(
+            message: 'Glove is inactive or not worn. Try again.',
+          ).showErrorDialog(context);
+
+          if (retry == true) {
+            _currentTime = 30;
+            _animationController.reset();
+            _animationController.duration = const Duration(seconds: 30);
+            _animationController.forward();
+            _startPreparationCountdown();
           }
-        });
+        }
       }
     });
+
   }
 
   void _cancelExistingTimers() {
@@ -189,6 +264,144 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     };
   }
 
+  double calculateExerciseAccuracy({
+    required List<Map<String, int>> actualValuesPerRepetition,
+    required Map<String, int> targetValues,
+    required int expectedRepetitions,
+  }) {
+    int actualRepetitions = actualValuesPerRepetition.length;
+    if (actualRepetitions == 0) return 0.0;
+
+    double totalAccuracy = 0.0;
+
+    for (var repetition in actualValuesPerRepetition) {
+      double repetitionAccuracy = 0.0;
+
+      for (var finger in targetValues.keys) {
+        int target = targetValues[finger]!;
+        int actual = repetition[finger] ?? 0;
+
+        double accuracy = 1.0 - (actual - target).abs() / target;
+        accuracy = accuracy.clamp(0.0, 1.0);
+
+        repetitionAccuracy += accuracy;
+      }
+
+      repetitionAccuracy /= targetValues.length;
+      totalAccuracy += repetitionAccuracy;
+    }
+
+    totalAccuracy /= actualRepetitions;
+
+    double repetitionRatio = actualRepetitions / expectedRepetitions;
+    repetitionRatio = repetitionRatio.clamp(0.0, 1.0);
+
+    double finalAccuracy = totalAccuracy * repetitionRatio * 100;
+
+    return finalAccuracy;
+  }
+
+  Map<String, double> calculateAverageAccuracyPerFinger({
+    required List<Exercise> exercises,
+    required List<List<Map<String, int>>> allValuesTakenForAccuracy,
+  }) {
+    // Accumulators
+    Map<String, double> fingerAccuracySum = {};
+    Map<String, int> fingerAccuracyCount = {};
+    Map<String, int> fingerExpectedReps = {};
+    Set<String> allFingers = {'Thumb', 'Index', 'Middle', 'Ring', 'Pinky'};
+
+    for (int i = 0; i < exercises.length; i++) {
+      final exercise = exercises[i];
+      final reps = allValuesTakenForAccuracy[i];
+      final expectedReps = exercise.numberOfTimes;
+
+      // Determine moving fingers
+      final movingFingers = <String>[];
+      exercise.baseValues.forEach((finger, baseVal) {
+        if (exercise.targetValues.containsKey(finger)) {
+          final targetVal = exercise.targetValues[finger]!;
+          if ((baseVal - targetVal).abs() > 100) {
+            movingFingers.add(finger);
+          }
+        }
+      });
+
+      for (var rep in reps) {
+        for (var finger in movingFingers) {
+          if (rep.containsKey(finger) && exercise.targetValues.containsKey(finger)) {
+            final actual = rep[finger]!;
+            final target = exercise.targetValues[finger]!;
+            double accuracy = 1.0 - (actual - target).abs() / target;
+            accuracy = accuracy.clamp(0.0, 1.0);
+
+            fingerAccuracySum[finger] = (fingerAccuracySum[finger] ?? 0) + accuracy;
+            fingerAccuracyCount[finger] = (fingerAccuracyCount[finger] ?? 0) + 1;
+          }
+        }
+      }
+
+      for (var finger in movingFingers) {
+        fingerExpectedReps[finger] = (fingerExpectedReps[finger] ?? 0) + expectedReps;
+      }
+    }
+
+    // Final map to return
+    Map<String, double> finalAccuracies = {};
+
+    for (var finger in allFingers) {
+      if (fingerAccuracyCount.containsKey(finger)) {
+        final totalAcc = fingerAccuracySum[finger]!;
+        final count = fingerAccuracyCount[finger]!;
+        final expected = fingerExpectedReps[finger] ?? count;
+
+        // Repetition ratio factor
+        double repRatio = count / expected;
+        repRatio = repRatio.clamp(0.0, 1.0);
+
+        final average = (totalAcc / count) * repRatio * 100;
+        finalAccuracies[finger] = double.parse(average.toStringAsFixed(2));
+      } else {
+        finalAccuracies[finger] = -1.0;
+      }
+    }
+
+    return finalAccuracies;
+  }
+
+  bool areBaseValuesReached(Map<String, int> currentFlexValues, Exercise exercise) {
+    bool allMatch = true;
+
+    Map<String, int> baseValues = exercise.baseValues;
+    Map<String, int> targetValues = exercise.targetValues;
+
+    List<String> movingFingers = [];
+
+    baseValues.forEach((finger, baseValue) {
+      if (targetValues.containsKey(finger)) {
+        if ((baseValue - targetValues[finger]!).abs() > 100) {
+          movingFingers.add(finger);
+        }
+      }
+    });
+
+    for (String finger in movingFingers) {
+      if (currentFlexValues.containsKey(finger) && baseValues.containsKey(finger)) {
+        if ((currentFlexValues[finger]! - baseValues[finger]!).abs() > 100) {
+          allMatch = false;
+          break;
+        }
+      }
+    }
+
+    return allMatch;
+  }
+
+  bool _wasInBasePosition = true;
+  bool _isInBasePosition = true;
+  List<Map<String, int>> _bestValuesPerRepetition = [];
+  List<Map<String, int>> _currentRepetitionValues = [];
+
   void _startExercise() {
     if (_isExerciseActive) return;
     _isExerciseActive = true;
@@ -196,10 +409,15 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     setState(() {
       _isPreparing = false;
       _currentExerciseIndex++;
-      _currentTime = 30; // Changed to 30 seconds per exercise
+      _currentTime = 30;
+      repetitions = 0;
+      accuracy = 0;
+      _wasInBasePosition = true;
+      _isInBasePosition = true;
     });
 
-    // Reset animation with new duration
+    int requiredRepetitions = widget.program.exercises[_currentExerciseIndex].numberOfTimes;
+
     _animationController.duration = const Duration(seconds: 30);
     _animationController.reset();
     _animationController.forward();
@@ -213,6 +431,70 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     _flexReadingTimer = Timer.periodic(const Duration(milliseconds: 250), (timer) {
       if (mounted) {
         readFlexSensor();
+
+        _currentRepetitionValues.add(Map<String, int>.from(currentFlexValues));
+
+        _wasInBasePosition = _isInBasePosition;
+        _isInBasePosition = areBaseValuesReached(currentFlexValues, widget.program.exercises[_currentExerciseIndex]);
+
+        // if (_isInBasePosition && !_wasInBasePosition  && repetitions < requiredRepetitions) {
+        //
+        //   if (_currentRepetitionValues.isNotEmpty) {
+        //     _currentRepetitionValues.sort((a, b) {
+        //       int sumA = a.values.reduce((v1, v2) => v1 + v2);
+        //       int sumB = b.values.reduce((v1, v2) => v1 + v2);
+        //       return sumB.compareTo(sumA);
+        //     });
+        //
+        //     _bestValuesPerRepetition.add(_currentRepetitionValues.first);
+        //     _currentRepetitionValues.clear();
+        //   }
+        //
+        //   setState(() {
+        //     repetitions++;
+        //   });
+        // }
+
+        if (_isInBasePosition && !_wasInBasePosition && repetitions < requiredRepetitions) {
+          // Get the current exercise
+          final exercise = widget.program.exercises[_currentExerciseIndex];
+
+          // Determine the moving fingers
+          final Map<String, int> baseValues = exercise.baseValues;
+          final Map<String, int> targetValues = exercise.targetValues;
+          final List<String> movingFingers = [];
+
+          baseValues.forEach((finger, baseValue) {
+            if (targetValues.containsKey(finger)) {
+              if ((baseValue - targetValues[finger]!).abs() > 100) {
+                movingFingers.add(finger);
+              }
+            }
+          });
+
+          if (_currentRepetitionValues.isNotEmpty) {
+            // Only consider values of moving fingers when comparing for best
+            _currentRepetitionValues.sort((a, b) {
+              int sumA = movingFingers.fold(0, (sum, finger) => sum + (a[finger] ?? 0));
+              int sumB = movingFingers.fold(0, (sum, finger) => sum + (b[finger] ?? 0));
+              return sumB.compareTo(sumA); // descending: higher movement first
+            });
+
+            // Extract only the relevant fingers into the best value
+            Map<String, int> bestForMovingFingers = {
+              for (var finger in movingFingers)
+                if (_currentRepetitionValues.first.containsKey(finger))
+                  finger: _currentRepetitionValues.first[finger]!
+            };
+
+            _bestValuesPerRepetition.add(bestForMovingFingers);
+            _currentRepetitionValues.clear();
+          }
+
+            setState(() {
+              repetitions++;
+            });
+        }
       } else {
         timer.cancel();
         _flexReadingTimer = null;
@@ -223,32 +505,51 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
       if (mounted) {
         setState(() {
           _currentTime--;
-
-          if (_currentTime == 0) {
-            _cancelExistingTimers();
-            _isExerciseActive = false;
-
-            Map<String, int> targetValues =
-                widget.program.exercises[_currentExerciseIndex].targetValues;
-
-            Map<String, int> userValues = Map<String, int>.from(currentFlexValues);
-
-            precisions = calculatePrecisions(targetValues, userValues);
-
-            print("Exercise ${_currentExerciseIndex + 1} - Overall Precision: ${precisions['overallPrecision']}%");
-            print("Finger Precisions: ${precisions['fingerPrecisions']}");
-
-            if (_currentExerciseIndex < widget.program.exercises.length - 1) {
-              _startExercise();
-            } else {
-              _endEntireProgramStopWatch();
-              _cancelExistingTimers();
-              _addTrainingProgramToCompleted(widget.program);
-              _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
-              _showCompletionDialog();
-            }
-          }
         });
+
+        if (_currentTime == 0) {
+          _cancelExistingTimers();
+          _isExerciseActive = false;
+
+          List<Map<String, int>> top = _bestValuesPerRepetition.take(requiredRepetitions).toList();
+
+          // print("Top best values (one per repetition):");
+          // for (var i = 0; i < top.length; i++) {
+          //   print("${i + 1}: ${top[i]}");
+          // }
+
+          allValuesTakenForAccuracy.add(top);
+
+          _bestValuesPerRepetition.clear();
+          _currentRepetitionValues.clear();
+
+          // // Map<String, int> targetValues = widget.program.exercises[_currentExerciseIndex].targetValues;
+          // // Map<String, int> userValues = Map<String, int>.from(currentFlexValues);
+          // //
+          // // var precisions = calculatePrecisions(targetValues, userValues);
+          // //
+          // // print("Exercise ${_currentExerciseIndex + 1} - Overall Precision: ${precisions['overallPrecision']}%");
+          // // print("Finger Precisions: ${precisions['fingerPrecisions']}");
+          // // print("Repetitions: $repetitions");
+          //
+          // setState(() {
+          //   accuracy = precisions['overallPrecision'];
+          // });
+
+          if (_currentExerciseIndex < widget.program.exercises.length - 1) {
+            _startExercise();
+          } else {
+
+            finalAccuracy = calculateAverageAccuracyPerFinger(exercises: widget.program.exercises, allValuesTakenForAccuracy: allValuesTakenForAccuracy);
+            print('${finalAccuracy} here');
+
+            _endEntireProgramStopWatch();
+            _cancelExistingTimers();
+            _addTrainingProgramToCompleted(widget.program);
+            _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
+            _showCompletionDialog();
+          }
+        }
       }
     });
   }
@@ -260,6 +561,18 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
       builder: (context) {
         final screenHeight = MediaQuery.of(context).size.height;
         final screenWidth = MediaQuery.of(context).size.width;
+
+        double total = 0;
+        int count = 0;
+
+        finalAccuracy.forEach((finger, accuracy) {
+          if (accuracy != -1) {
+            total += accuracy;
+            count++;
+          }
+        });
+
+        double averageAccuracy = count > 0 ? total / count : 0.0;
 
         return AlertDialog(
           title: const Text(
@@ -292,36 +605,43 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                     ),
                     const SizedBox(height: 20),
                     ProgressBarWidget(
-                      percentage: precisions['overallPrecision'] ?? 0,
+                      percentage: averageAccuracy,
                       text: 'Accuracy for this program',
                       rounded: true,
+                      isWhite: false,
                     ),
                     const SizedBox(height: 10),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Thumb'] ?? 0,
+                      percentage: finalAccuracy['Thumb'] ?? -1.0,
                       text: 'Thumb',
                       rounded: false,
+                      isWhite: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Index'] ?? 0,
+                      percentage: finalAccuracy['Index'] ?? -1.0,
                       text: 'Index',
                       rounded: false,
+                      isWhite: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Middle'] ?? 0,
+                      percentage: finalAccuracy['Middle'] ?? -1.0,
                       text: 'Middle',
                       rounded: false,
+                      isWhite: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Ring'] ?? 0,
+                      percentage: finalAccuracy['Ring'] ?? -1.0,
                       text: 'Ring',
                       rounded: false,
+                      isWhite: false,
                     ),
                     ProgressBarWidget(
-                      percentage: precisions['fingerPrecisions']['Pinky'] ?? 0,
+                      percentage: finalAccuracy['Pinky'] ?? -1.0,
                       text: 'Pinky',
                       rounded: false,
+                      isWhite: false,
                     ),
+                    
                   ],
                 ),
               ),
@@ -380,7 +700,23 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   }
 
   Future<void> _addTrainingProgramToCompleted(TrainingProgram trainingProgram) async {
+    List<Map<String, dynamic>> serializedList = [];
+
+    for (int exerciseIndex = 0; exerciseIndex < allValuesTakenForAccuracy.length; exerciseIndex++) {
+      print("Exercise ${exerciseIndex + 1}:");
+      List<Map<String, int>> reps = allValuesTakenForAccuracy[exerciseIndex];
+
+      for (int repIndex = 0; repIndex < reps.length; repIndex++) {
+        print("  Repetition ${repIndex + 1}: ${reps[repIndex]}");
+      }
+    }
+
+    for (var repetition in allValuesTakenForAccuracy) {
+      serializedList.add({'repetition': repetition});
+    }
+
     await trainingProgramService.addCompletedProgram(uid, trainingProgram);
+    await trainingProgramService.updateAccuracyValuesForCompletedProgram(uid, trainingProgram, serializedList);
   }
 
   String _formatTime(int seconds) {
@@ -497,6 +833,52 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
             ),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 30),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Glove Status: ",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                isGloveActive ? "Active" : "Inactive",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isGloveActive ? Colors.green : Colors.red,
+                ),
+              ),
+              SizedBox(width: 5,),
+              Icon(isGloveActive ? Icons.check : Icons.close, color: isGloveActive ? Colors.green : Colors.red,)
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Wearing Status: ",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                isGloveMounted ? "On Hand" : "Not On Hand",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isGloveMounted ? Colors.green : Colors.red,
+                ),
+              ),
+              SizedBox(width: 5,),
+              Icon(isGloveMounted ? Icons.check : Icons.close, color: isGloveMounted ? Colors.green : Colors.red,)
+            ],
+          ),
         ],
       ),
     );
@@ -587,7 +969,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
             ),
           ),
           const SizedBox(height: 30),
-
+          Text('repetitions ${repetitions}', style: TextStyle(color: Colors.white),),
           // Next exercise button
           Container(
             width: 200,
@@ -618,7 +1000,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                   _startExercise();
                 } else {
                   _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
-                  await trainingProgramService.addCompletedProgram(uid, widget.program);
+                  _addTrainingProgramToCompleted(widget.program);
                   _showCompletionDialog();
                   _cancelExistingTimers();
                 }
