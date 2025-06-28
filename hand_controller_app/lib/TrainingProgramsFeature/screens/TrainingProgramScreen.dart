@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hand_controller_app/AuthFeature/services/AuthService.dart';
 import 'package:hand_controller_app/AuthFeature/services/UserService.dart';
+import 'package:hand_controller_app/NotificationFeature/services/NotificationService.dart';
 import 'package:hand_controller_app/ProfileFeature/services/ConsultationService.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/screens/ProgressTrackingScreen.dart';
 import 'package:hand_controller_app/ProgressTrackingFeature/widgets/FullProgramContainerWidget.dart';
@@ -149,9 +150,10 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
         user = doctor;
         totalCompletions = await trainingProgramService
             .getTotalCompletionsForDoctorPrograms(uid);
-        nextConsultation =
-            await consultationService.getNextConsultationForDoctor(uid);
-        nextPatient = (await userService.getPatientData(nextConsultation!.patientId));
+        // nextConsultation =
+        //     await consultationService.getNextConsultationForDoctor(uid);
+        // print("nex consultation is $nextConsultation");
+        // nextPatient = (await userService.getPatientData(nextConsultation!.patientId));
         lastTrainingProgramCreated = await trainingProgramService
             .getLastTrainingProgramCreatedByDoctor(uid);
 
@@ -1180,124 +1182,124 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                   ),
                 ),
               ),
-              nextConsultation != null
-                  ? Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 15),
-                        decoration: BoxDecoration(
-                          color: CustomTheme.accentColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Theme(
-                          data: ThemeData()
-                              .copyWith(dividerColor: Colors.transparent),
-                          child: ExpansionTile(
-                            backgroundColor: Colors.transparent,
-                            onExpansionChanged: (bool expanded) {
-                              setState(() {
-                                isExpanded = expanded;
-                              });
-                            },
-                            title: Text(
-                              nextConsultation!.title,
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: CustomTheme.accentColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 15.0),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Name:',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          nextPatient!.name,
-                                          style: TextStyle(
-                                              color: Colors.white, fontSize: 14),
-                                        ),
-                                        SizedBox(height: 8,),
-                                        const Text(
-                                          'Date:',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          nextConsultation!.date
-                                              .toLocal()
-                                              .toString(),
-                                          style: TextStyle(
-                                              color: Colors.white, fontSize: 14),
-                                        ),
-                                        SizedBox(height: 8),
-                                        const Text(
-                                          'Plan:',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          nextConsultation!.treatmentPlan,
-                                          style: TextStyle(
-                                              color: Colors.white, fontSize: 14),
-                                        ),
-                                        SizedBox(height: 8),
-                                        const Text(
-                                          'Notes:',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          nextConsultation!.notes,
-                                          style: TextStyle(
-                                              color: Colors.white, fontSize: 14),
-                                        ),
-                                        SizedBox(height: 10),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                  : Container(
-                      child: Center(
-                      child: Text(
-                        'No Consultation available.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )),
+              // nextConsultation != null
+              //     ? Padding(
+              //         padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              //         child: Container(
+              //           margin: const EdgeInsets.only(bottom: 15),
+              //           decoration: BoxDecoration(
+              //             color: CustomTheme.accentColor,
+              //             borderRadius: BorderRadius.circular(12),
+              //           ),
+              //           child: Theme(
+              //             data: ThemeData()
+              //                 .copyWith(dividerColor: Colors.transparent),
+              //             child: ExpansionTile(
+              //               backgroundColor: Colors.transparent,
+              //               onExpansionChanged: (bool expanded) {
+              //                 setState(() {
+              //                   isExpanded = expanded;
+              //                 });
+              //               },
+              //               title: Text(
+              //                 nextConsultation!.title,
+              //                 style: TextStyle(color: Colors.white),
+              //               ),
+              //               children: [
+              //                 Container(
+              //                   decoration: BoxDecoration(
+              //                     color: CustomTheme.accentColor,
+              //                     borderRadius: BorderRadius.circular(12),
+              //                   ),
+              //                   child: Padding(
+              //                     padding: const EdgeInsets.symmetric(
+              //                         horizontal: 15.0),
+              //                     child: Align(
+              //                       alignment: Alignment.centerLeft,
+              //                       child: Column(
+              //                         crossAxisAlignment:
+              //                             CrossAxisAlignment.start,
+              //                         mainAxisAlignment: MainAxisAlignment.start,
+              //                         children: [
+              //                           const Text(
+              //                             'Name:',
+              //                             style: TextStyle(
+              //                               color: Colors.white,
+              //                               fontSize: 14,
+              //                               fontWeight: FontWeight.bold,
+              //                             ),
+              //                           ),
+              //                           Text(
+              //                             nextPatient!.name,
+              //                             style: TextStyle(
+              //                                 color: Colors.white, fontSize: 14),
+              //                           ),
+              //                           SizedBox(height: 8,),
+              //                           const Text(
+              //                             'Date:',
+              //                             style: TextStyle(
+              //                               color: Colors.white,
+              //                               fontSize: 14,
+              //                               fontWeight: FontWeight.bold,
+              //                             ),
+              //                           ),
+              //                           Text(
+              //                             nextConsultation!.date
+              //                                 .toLocal()
+              //                                 .toString(),
+              //                             style: TextStyle(
+              //                                 color: Colors.white, fontSize: 14),
+              //                           ),
+              //                           SizedBox(height: 8),
+              //                           const Text(
+              //                             'Plan:',
+              //                             style: TextStyle(
+              //                               color: Colors.white,
+              //                               fontSize: 14,
+              //                               fontWeight: FontWeight.bold,
+              //                             ),
+              //                           ),
+              //                           Text(
+              //                             nextConsultation!.treatmentPlan,
+              //                             style: TextStyle(
+              //                                 color: Colors.white, fontSize: 14),
+              //                           ),
+              //                           SizedBox(height: 8),
+              //                           const Text(
+              //                             'Notes:',
+              //                             style: TextStyle(
+              //                               color: Colors.white,
+              //                               fontSize: 14,
+              //                               fontWeight: FontWeight.bold,
+              //                             ),
+              //                           ),
+              //                           Text(
+              //                             nextConsultation!.notes,
+              //                             style: TextStyle(
+              //                                 color: Colors.white, fontSize: 14),
+              //                           ),
+              //                           SizedBox(height: 10),
+              //                         ],
+              //                       ),
+              //                     ),
+              //                   ),
+              //                 ),
+              //               ],
+              //             ),
+              //           ),
+              //         ),
+              //       )
+              //     : Container(
+              //         child: Center(
+              //         child: Text(
+              //           'No Consultation available.',
+              //           style: TextStyle(
+              //             fontSize: 16,
+              //             color: Colors.white,
+              //             fontWeight: FontWeight.bold,
+              //           ),
+              //         ),
+              //       )),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15.0),
                 child: Container(
@@ -1325,7 +1327,9 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                           user: user,
                           favoriteTrainingPrograms: favoriteTrainingPrograms,
                           onFavoriteChanged: _handleFavoriteChanged,
-                          isDone: false),
+                          isDone: false,
+                        viewMore: false,
+                      ),
                     )
                   : Container(
                       child: Center(

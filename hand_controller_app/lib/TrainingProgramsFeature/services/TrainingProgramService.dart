@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/TrainingProgram.dart';
 
 class TrainingProgramService {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  late final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   // Get all training programs
   Future<List<TrainingProgram>> getAllTrainingPrograms() async {

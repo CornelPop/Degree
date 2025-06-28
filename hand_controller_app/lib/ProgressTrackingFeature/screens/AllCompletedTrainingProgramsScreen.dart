@@ -285,6 +285,7 @@ class _AllCompletedTrainingProgramsScreenState extends State<AllCompletedTrainin
                       program: program,
                       title: program.name,
                       isDone: true,
+                      viewMore: false,
                       date:
                           'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
                       subtitle:

@@ -1,0 +1,11 @@
+ce intrebari vor veni de la profi  de la comisie?
+
+- partea de testare si validare trebuie sa contina metrici, valori, rapiditatea cu care se tranmist valorile, consistenta valorilor senzorilor la repetitie....histograma cu valorile si sa arat constanta
+
+- 5 grafice, unu pt fiecare senzor cu eroarea, cum sunt in exemplul din excel, 5 pentrue fiecare pozitie a mainii = 15 grafice
+
+- inserez datele pe prima coloana, pe a doua sortez si las doar valorile unice, Data -> Remove Duplicates si Home -> Sorter and Filter, continue cu current selection
+
+
+In text trebuie Figura 5.1. 
+

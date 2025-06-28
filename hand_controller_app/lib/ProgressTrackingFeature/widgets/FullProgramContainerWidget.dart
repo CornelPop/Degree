@@ -14,6 +14,7 @@ class FullProgramContainerWidget extends StatelessWidget {
   final String subtitle;
   final String difficulty;
   final bool isDone;
+  final bool viewMore;
   final List<TrainingProgram> favoriteTrainingPrograms;
   final void Function(String programId, bool isNowFavorite) onFavoriteChanged;
 
@@ -26,7 +27,8 @@ class FullProgramContainerWidget extends StatelessWidget {
       required this.user,
       required this.favoriteTrainingPrograms,
       required this.onFavoriteChanged,
-      required this.isDone});
+      required this.isDone,
+      required this.viewMore});
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +104,7 @@ class FullProgramContainerWidget extends StatelessWidget {
                 ),
               ],
             ),
-            Positioned(
+            viewMore ? Positioned(
               right: 16,
               top: 0,
               bottom: 0,
@@ -129,7 +131,8 @@ class FullProgramContainerWidget extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
+            )
+            : Container(),
           ],
         ),
       ),

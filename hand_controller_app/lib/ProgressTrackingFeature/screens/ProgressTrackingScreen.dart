@@ -345,6 +345,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
                                     subtitle:
                                     '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                                     isDone: true,
+                                    viewMore: true,
                                     difficulty: program.category,
                                     onFavoriteChanged: _handleFavoriteChanged,
                                   ),
@@ -574,6 +575,7 @@ class _ProgressTrackingScreenState extends State<ProgressTrackingScreen> {
                                 program: program,
                                 title: program.name,
                                 isDone: false,
+                                viewMore: false,
                                 date:
                                 'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
                                 subtitle:

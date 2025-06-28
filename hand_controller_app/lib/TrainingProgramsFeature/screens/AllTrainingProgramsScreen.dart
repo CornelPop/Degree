@@ -286,6 +286,7 @@ class _AllTrainingProgramsScreenState extends State<AllTrainingProgramsScreen> {
                       '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
                       difficulty: program.category,
                       isDone: false,
+                      viewMore: false,
                       favoriteTrainingPrograms: widget.favoriteTrainingPrograms,
                       onFavoriteChanged: (String programId, bool isNowFavorite) {  },
                     ),
