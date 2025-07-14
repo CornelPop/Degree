@@ -41,7 +41,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
   late AnimationController _animationController;
   late Animation<double> _animation;
 
-  int _currentTime = 30;
+  int _currentTime = 20;
   int _currentExerciseIndex = -1;
   bool _isExerciseActive = false;
 
@@ -62,7 +62,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
 
   String flexSensorValue = '';
   bool isRequestInProgress = false;
-  final String esp32IpAddress = "http://192.168.217.136";
+  final String esp32IpAddress = "http://192.168.174.136";
   Map<String, int> currentFlexValues = {
     'Thumb': 0,
     'Index': 0,
@@ -83,7 +83,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 30),
+      duration: const Duration(seconds: 20),
     );
 
     _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_animationController);
@@ -158,11 +158,11 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     _cancelExistingTimers();
     setState(() {
       _isPreparing = true;
-      _currentTime = 30;
+      _currentTime = 20;
     });
 
     _animationController.reset();
-    _animationController.duration = const Duration(seconds: 30);
+    _animationController.duration = const Duration(seconds: 20);
     _animationController.forward();
 
     startFlexMonitoring();
@@ -185,9 +185,9 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
           ).showErrorDialog(context);
 
           if (retry == true) {
-            _currentTime = 30;
+            _currentTime = 20;
             _animationController.reset();
-            _animationController.duration = const Duration(seconds: 30);
+            _animationController.duration = const Duration(seconds: 20);
             _animationController.forward();
             _startPreparationCountdown();
           }
@@ -387,7 +387,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
 
     for (String finger in movingFingers) {
       if (currentFlexValues.containsKey(finger) && baseValues.containsKey(finger)) {
-        if ((currentFlexValues[finger]! - baseValues[finger]!).abs() > 100) {
+        if ((currentFlexValues[finger]! - baseValues[finger]!).abs() > 200) {
           allMatch = false;
           break;
         }
@@ -409,7 +409,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     setState(() {
       _isPreparing = false;
       _currentExerciseIndex++;
-      _currentTime = 30;
+      _currentTime = 20;
       repetitions = 0;
       accuracy = 0;
       _wasInBasePosition = true;
@@ -418,7 +418,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
 
     int requiredRepetitions = widget.program.exercises[_currentExerciseIndex].numberOfTimes;
 
-    _animationController.duration = const Duration(seconds: 30);
+    _animationController.duration = const Duration(seconds: 20);
     _animationController.reset();
     _animationController.forward();
 
@@ -545,8 +545,9 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
 
             _endEntireProgramStopWatch();
             _cancelExistingTimers();
+            widget.program.allValuesTakenForAccuracy = allValuesTakenForAccuracy;
             _addTrainingProgramToCompleted(widget.program);
-            _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
+            _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds, finalAccuracy);
             _showCompletionDialog();
           }
         }
@@ -676,13 +677,39 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
     );
   }
 
-  Future<void> _updateExerciseCounter(String category, int? timeSpent) async {
+  Future<void> _updateExerciseCounter(String category, int? timeSpent, Map<String, double> finalAccuracy) async {
     Map<String, dynamic>? userData = await userService.getUserData(uid);
+
     if (userData != null) {
+      // Actualizează timpul total
       timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int? ?? 0;
       timeSpentInWorkouts += timeSpent ?? 0;
       await userService.updateUserField(uid, 'timeSpentInWorkouts', timeSpentInWorkouts);
 
+      // Calculează media acurateții pe baza finalAccuracy
+      double total = 0.0;
+      int count = 0;
+
+      finalAccuracy.forEach((finger, value) {
+        if (value != -1) {
+          total += value;
+          count++;
+        }
+      });
+
+      double averageAccuracy = count > 0 ? total / count : 0.0;
+
+      // Citește acuratețea existentă din DB în siguranță
+      double currentAccuracy = (userData['accuracyOfExercises'] as num?)?.toDouble() ?? 0.0;
+
+      // Calculează noua medie (sau setează direct dacă e prima)
+      double updatedAccuracy = currentAccuracy == 0.0
+          ? averageAccuracy
+          : (currentAccuracy + averageAccuracy) / 2;
+
+      await userService.updateUserField(uid, 'accuracyOfExercises', updatedAccuracy);
+
+      // Actualizează contorii de exerciții pe categorie
       if (category == 'Beginner') {
         numberBeginnerExercises = userData['numberBeginnerExercises'] as int? ?? 0;
         numberBeginnerExercises++;
@@ -856,29 +883,6 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
               Icon(isGloveActive ? Icons.check : Icons.close, color: isGloveActive ? Colors.green : Colors.red,)
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "Wearing Status: ",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                isGloveMounted ? "On Hand" : "Not On Hand",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isGloveMounted ? Colors.green : Colors.red,
-                ),
-              ),
-              SizedBox(width: 5,),
-              Icon(isGloveMounted ? Icons.check : Icons.close, color: isGloveMounted ? Colors.green : Colors.red,)
-            ],
-          ),
         ],
       ),
     );
@@ -969,7 +973,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
             ),
           ),
           const SizedBox(height: 30),
-          Text('repetitions ${repetitions}', style: TextStyle(color: Colors.white),),
+          Text('Repetitions done: ${repetitions}', style: TextStyle(color: Colors.white),),
           // Next exercise button
           Container(
             width: 200,
@@ -999,7 +1003,7 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                   _isExerciseActive = false;
                   _startExercise();
                 } else {
-                  _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds);
+                  _updateExerciseCounter(widget.program.category, _stopwatchEntireProgram.elapsed.inSeconds, finalAccuracy);
                   _addTrainingProgramToCompleted(widget.program);
                   _showCompletionDialog();
                   _cancelExistingTimers();
@@ -1022,7 +1026,30 @@ class _StartTrainingProgramScreenState extends State<StartTrainingProgramScreen>
                 ),
               ),
             ),
-          )
+          ),
+          Container(height: 10,),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Glove Status: ",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                isGloveActive ? "Active" : "Inactive",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isGloveActive ? Colors.green : Colors.red,
+                ),
+              ),
+              SizedBox(width: 5,),
+              Icon(isGloveActive ? Icons.check : Icons.close, color: isGloveActive ? Colors.green : Colors.red,)
+            ],
+          ),
         ],
       ),
     );

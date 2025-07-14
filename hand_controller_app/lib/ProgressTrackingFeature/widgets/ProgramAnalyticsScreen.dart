@@ -109,9 +109,11 @@ class ProgramAnalyticsScreenState extends State<ProgramAnalyticsScreen> {
   void initState() {
     super.initState();
 
-    print(widget.trainingProgram.allValuesTakenForAccuracy);
+    print(widget.trainingProgram);
 
     exercises = widget.trainingProgram.exercises;
+    print(exercises);
+    print(widget.trainingProgram.allValuesTakenForAccuracy);
     finalAccuracy = calculateAverageAccuracyPerFinger(exercises: exercises, allValuesTakenForAccuracy: widget.trainingProgram.allValuesTakenForAccuracy);
 
     finalAccuracy.forEach((finger, accuracy) {

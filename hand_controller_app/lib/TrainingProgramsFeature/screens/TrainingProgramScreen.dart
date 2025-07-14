@@ -144,29 +144,37 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
           userData['numberIntermediateExercises'] as int;
       numberDifficultExercises = userData['numberDifficultExercises'] as int;
       timeSpentInWorkouts = userData['timeSpentInWorkouts'] as int;
-      accuracyOfExercises = userData['accuracyOfExercises'] as double;
+      //accuracyOfExercises = userData['accuracyOfExercises'] as double;
     } else if (role == 'Doctor') {
-        doctor = Doctor.fromMap(userData);
-        user = doctor;
-        totalCompletions = await trainingProgramService
-            .getTotalCompletionsForDoctorPrograms(uid);
-        // nextConsultation =
-        //     await consultationService.getNextConsultationForDoctor(uid);
-        // print("nex consultation is $nextConsultation");
-        // nextPatient = (await userService.getPatientData(nextConsultation!.patientId));
-        lastTrainingProgramCreated = await trainingProgramService
-            .getLastTrainingProgramCreatedByDoctor(uid);
+      doctor = Doctor.fromMap(userData);
+      user = doctor;
+      totalCompletions = await trainingProgramService
+          .getTotalCompletionsForDoctorPrograms(uid);
+      nextConsultation = await consultationService.getNextConsultationForDoctor(uid);
+      print("next consultation is $nextConsultation");
 
-        numberBeginnerProgramsCreated = await trainingProgramService.countProgramsByDoctorAndCategory(doctorId: uid, category: 'Beginner');
-        numberIntermediateProgramsCreated = await trainingProgramService.countProgramsByDoctorAndCategory(doctorId: uid, category: 'Intermediate');
-        numberDifficultProgramsCreated = await trainingProgramService.countProgramsByDoctorAndCategory(doctorId: uid, category: 'Difficult');
+      if (nextConsultation != null) {
+        nextPatient = await userService.getPatientData(nextConsultation!.patientId);
+      }
+      lastTrainingProgramCreated = await trainingProgramService
+          .getLastTrainingProgramCreatedByDoctor(uid);
 
-        userId = uid;
-        List<dynamic> patientsLocal =
-            await userService.getPatientsByDoctorId(uid);
-        patients = patientsLocal.cast<Patient>();
-        filteredPatients = patients;
-        _isExpandedList = List.generate(patients.length, (_) => false);
+      numberBeginnerProgramsCreated =
+          await trainingProgramService.countProgramsByDoctorAndCategory(
+              doctorId: uid, category: 'Beginner');
+      numberIntermediateProgramsCreated =
+          await trainingProgramService.countProgramsByDoctorAndCategory(
+              doctorId: uid, category: 'Intermediate');
+      numberDifficultProgramsCreated =
+          await trainingProgramService.countProgramsByDoctorAndCategory(
+              doctorId: uid, category: 'Difficult');
+
+      userId = uid;
+      List<dynamic> patientsLocal =
+          await userService.getPatientsByDoctorId(uid);
+      patients = patientsLocal.cast<Patient>();
+      filteredPatients = patients;
+      _isExpandedList = List.generate(patients.length, (_) => false);
     }
   }
 
@@ -360,7 +368,8 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                                         Icon(Icons.insert_chart,
                                             color: Colors.white, size: 40),
                                         Text(
-                                          '$accuracyOfExercises',
+                                          (patient?.accuracyOfExercises ?? 0)
+                                              .toStringAsFixed(1),
                                           style: TextStyle(
                                               fontSize: 24,
                                               fontWeight: FontWeight.bold,
@@ -893,7 +902,8 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15.0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15.0),
                 child: Container(
                   alignment: Alignment.centerLeft,
                   height: screenHeight * 0.35,
@@ -916,8 +926,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                                   );
                                 },
                                 child: Container(
-                                  margin: const EdgeInsets.only(
-                                      right: 8.0),
+                                  margin: const EdgeInsets.only(right: 8.0),
                                   decoration: BoxDecoration(
                                     color: CustomTheme.accentColor4,
                                     borderRadius: BorderRadius.circular(12),
@@ -1182,124 +1191,132 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                   ),
                 ),
               ),
-              // nextConsultation != null
-              //     ? Padding(
-              //         padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              //         child: Container(
-              //           margin: const EdgeInsets.only(bottom: 15),
-              //           decoration: BoxDecoration(
-              //             color: CustomTheme.accentColor,
-              //             borderRadius: BorderRadius.circular(12),
-              //           ),
-              //           child: Theme(
-              //             data: ThemeData()
-              //                 .copyWith(dividerColor: Colors.transparent),
-              //             child: ExpansionTile(
-              //               backgroundColor: Colors.transparent,
-              //               onExpansionChanged: (bool expanded) {
-              //                 setState(() {
-              //                   isExpanded = expanded;
-              //                 });
-              //               },
-              //               title: Text(
-              //                 nextConsultation!.title,
-              //                 style: TextStyle(color: Colors.white),
-              //               ),
-              //               children: [
-              //                 Container(
-              //                   decoration: BoxDecoration(
-              //                     color: CustomTheme.accentColor,
-              //                     borderRadius: BorderRadius.circular(12),
-              //                   ),
-              //                   child: Padding(
-              //                     padding: const EdgeInsets.symmetric(
-              //                         horizontal: 15.0),
-              //                     child: Align(
-              //                       alignment: Alignment.centerLeft,
-              //                       child: Column(
-              //                         crossAxisAlignment:
-              //                             CrossAxisAlignment.start,
-              //                         mainAxisAlignment: MainAxisAlignment.start,
-              //                         children: [
-              //                           const Text(
-              //                             'Name:',
-              //                             style: TextStyle(
-              //                               color: Colors.white,
-              //                               fontSize: 14,
-              //                               fontWeight: FontWeight.bold,
-              //                             ),
-              //                           ),
-              //                           Text(
-              //                             nextPatient!.name,
-              //                             style: TextStyle(
-              //                                 color: Colors.white, fontSize: 14),
-              //                           ),
-              //                           SizedBox(height: 8,),
-              //                           const Text(
-              //                             'Date:',
-              //                             style: TextStyle(
-              //                               color: Colors.white,
-              //                               fontSize: 14,
-              //                               fontWeight: FontWeight.bold,
-              //                             ),
-              //                           ),
-              //                           Text(
-              //                             nextConsultation!.date
-              //                                 .toLocal()
-              //                                 .toString(),
-              //                             style: TextStyle(
-              //                                 color: Colors.white, fontSize: 14),
-              //                           ),
-              //                           SizedBox(height: 8),
-              //                           const Text(
-              //                             'Plan:',
-              //                             style: TextStyle(
-              //                               color: Colors.white,
-              //                               fontSize: 14,
-              //                               fontWeight: FontWeight.bold,
-              //                             ),
-              //                           ),
-              //                           Text(
-              //                             nextConsultation!.treatmentPlan,
-              //                             style: TextStyle(
-              //                                 color: Colors.white, fontSize: 14),
-              //                           ),
-              //                           SizedBox(height: 8),
-              //                           const Text(
-              //                             'Notes:',
-              //                             style: TextStyle(
-              //                               color: Colors.white,
-              //                               fontSize: 14,
-              //                               fontWeight: FontWeight.bold,
-              //                             ),
-              //                           ),
-              //                           Text(
-              //                             nextConsultation!.notes,
-              //                             style: TextStyle(
-              //                                 color: Colors.white, fontSize: 14),
-              //                           ),
-              //                           SizedBox(height: 10),
-              //                         ],
-              //                       ),
-              //                     ),
-              //                   ),
-              //                 ),
-              //               ],
-              //             ),
-              //           ),
-              //         ),
-              //       )
-              //     : Container(
-              //         child: Center(
-              //         child: Text(
-              //           'No Consultation available.',
-              //           style: TextStyle(
-              //             fontSize: 16,
-              //             color: Colors.white,
-              //             fontWeight: FontWeight.bold,
-              //           ),
-              //         ),
-              //       )),
+              nextConsultation != null
+                  ? Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 15),
+                        decoration: BoxDecoration(
+                          color: CustomTheme.accentColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Theme(
+                          data: ThemeData()
+                              .copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            backgroundColor: Colors.transparent,
+                            onExpansionChanged: (bool expanded) {
+                              setState(() {
+                                isExpanded = expanded;
+                              });
+                            },
+                            title: Text(
+                              nextConsultation!.title,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: CustomTheme.accentColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 15.0),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Name:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          nextPatient!.name,
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14),
+                                        ),
+                                        SizedBox(
+                                          height: 8,
+                                        ),
+                                        const Text(
+                                          'Date:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          nextConsultation!.date
+                                              .toLocal()
+                                              .toString(),
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14),
+                                        ),
+                                        SizedBox(height: 8),
+                                        const Text(
+                                          'Plan:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          nextConsultation!.treatmentPlan,
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14),
+                                        ),
+                                        SizedBox(height: 8),
+                                        const Text(
+                                          'Notes:',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          nextConsultation!.notes,
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14),
+                                        ),
+                                        SizedBox(height: 10),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      child: Center(
+                      child: Text(
+                        'No Consultation available.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15.0),
                 child: Container(
@@ -1315,19 +1332,20 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
               ),
               lastTrainingProgramCreated != null
                   ? Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                       child: FullProgramContainerWidget(
-                          program: lastTrainingProgramCreated!,
-                          title: lastTrainingProgramCreated!.name,
-                          date:
-                              'Done in ${lastTrainingProgramCreated!.date.day} / ${lastTrainingProgramCreated!.date.month} / ${lastTrainingProgramCreated!.date.year}',
-                          subtitle:
-                              '${lastTrainingProgramCreated!.duration} MINS  ●  ${lastTrainingProgramCreated!.exercises.length} EXERCISES',
-                          difficulty: lastTrainingProgramCreated!.category,
-                          user: user,
-                          favoriteTrainingPrograms: favoriteTrainingPrograms,
-                          onFavoriteChanged: _handleFavoriteChanged,
-                          isDone: false,
+                        program: lastTrainingProgramCreated!,
+                        title: lastTrainingProgramCreated!.name,
+                        date:
+                            'Done in ${lastTrainingProgramCreated!.date.day} / ${lastTrainingProgramCreated!.date.month} / ${lastTrainingProgramCreated!.date.year}',
+                        subtitle:
+                            '${lastTrainingProgramCreated!.duration} MINS  ●  ${lastTrainingProgramCreated!.exercises.length} EXERCISES',
+                        difficulty: lastTrainingProgramCreated!.category,
+                        user: user,
+                        favoriteTrainingPrograms: favoriteTrainingPrograms,
+                        onFavoriteChanged: _handleFavoriteChanged,
+                        isDone: false,
                         viewMore: false,
                       ),
                     )
@@ -1341,9 +1359,10 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    )
-              ),
-              SizedBox(height: 20,)
+                    )),
+              SizedBox(
+                height: 20,
+              )
             ],
           ),
         ),

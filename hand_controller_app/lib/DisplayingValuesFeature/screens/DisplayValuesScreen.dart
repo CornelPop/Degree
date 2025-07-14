@@ -21,7 +21,7 @@ class _DisplayValuesScreenState extends State<DisplayValuesScreen> {
   final UserService userService = UserService();
   final AuthService authService = AuthService();
 
-  final String esp32IpAddress = "http://192.168.217.136";
+  final String esp32IpAddress = "http://192.168.174.136";
   Map<String, int> currentFlexValues = {
     'Thumb': 0,
     'Index': 0,

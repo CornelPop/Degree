@@ -62,7 +62,7 @@ class Patient extends User {
       numberIntermediateExercises: map['numberIntermediateExercises'] ?? 0,
       numberDifficultExercises: map['numberDifficultExercises'] ?? 0,
       timeSpentInWorkouts: map['timeSpentInWorkouts'] ?? 0,
-      accuracyOfExercises: map['accuracyOfExercises'] ?? 0.0,
+      accuracyOfExercises: (map['accuracyOfExercises'] as num?)?.toDouble() ?? 0.0,
       phoneNumber: map['phoneNumber'],
       dateOfBirth: map['dateOfBirth'],
       gender: map['gender'],

@@ -401,7 +401,7 @@ class _ConsultationDetailsScreenState extends State<ConsultationDetailsScreen> {
 
                                       } else {
                                         widget.consultation.title = titleController.text;
-                                        widget.consultation.date = dateController.text as DateTime;
+                                        widget.consultation.date = DateTime.parse(dateController.text);
                                         widget.consultation.treatmentPlan = treatmentPlanController.text;
                                         widget.consultation.notes = notesController.text;
                                         widget.consultation.location = locationController.text;

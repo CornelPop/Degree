@@ -4,7 +4,6 @@ import '../models/TrainingProgram.dart';
 class TrainingProgramService {
   late final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  // Get all training programs
   Future<List<TrainingProgram>> getAllTrainingPrograms() async {
     try {
       QuerySnapshot querySnapshot = await firestore.collection('trainingPrograms').get();

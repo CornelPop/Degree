@@ -200,7 +200,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           },
                         ),
                         const Text(
-                          'Remember me',
+                          'Keep me logged in',
                           style: TextStyle(color: CustomTheme.secondaryColor),
                         ),
                       ],

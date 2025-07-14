@@ -10,7 +10,7 @@ class TrainingProgram {
   DateTime date;
   DateTime createdAt;
   final List<Exercise> exercises;
-  final List<List<Map<String, int>>> allValuesTakenForAccuracy;
+  List<List<Map<String, int>>> allValuesTakenForAccuracy;
 
   TrainingProgram({
     required this.trainingProgramId,

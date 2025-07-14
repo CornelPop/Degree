@@ -543,7 +543,7 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
                                       ),
                                       child: ElevatedButton(
                                         onPressed: () {
-                                          //_applyFilters();
+                                          _applyFilters();
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.transparent,
@@ -816,11 +816,11 @@ class _PatientsManagementScreenState extends State<PatientsManagementScreen> {
               SizedBox(
                 height: 20,
               ),
-              ElevatedButton(
-                  onPressed: () async {
-                    showGloveRemovedDialog(context);
-                  },
-                  child: Text('press'))
+              // ElevatedButton(
+              //     onPressed: () async {
+              //       showGloveRemovedDialog(context);
+              //     },
+              //     child: Text('press'))
             ],
           ),
         ),

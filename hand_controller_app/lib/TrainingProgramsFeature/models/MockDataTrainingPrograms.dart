@@ -4,7 +4,7 @@ List<Exercise> getExercises() {
   const int lowThumb = 2040;
   const int highThumb = 2500;
 
-  const int lowIndex = 1940;
+  const int lowIndex = 1870;
   const int highIndex = 2850;
 
   const int lowMiddle = 1970;
@@ -189,7 +189,7 @@ List<Exercise> getExercises() {
       'Ring': lowRing,
       'Pinky': lowPinky
     },
-    animationPath: '',
+    animationPath: 'assets/animations/first.json',
   );
 
   return [

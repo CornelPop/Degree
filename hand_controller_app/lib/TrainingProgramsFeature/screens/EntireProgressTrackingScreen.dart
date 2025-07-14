@@ -273,30 +273,33 @@ class _EntireProgressTrackingScreenState
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // ListView.builder(
-                  //   physics: NeverScrollableScrollPhysics(),
-                  //   shrinkWrap: true,
-                  //   itemCount: completedPrograms.length > 5
-                  //       ? 5
-                  //       : completedPrograms.length,
-                  //   itemBuilder: (context, index) {
-                  //     final program = completedPrograms[index];
-                  //     return Padding(
-                  //       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  //       child:
-                  //       DoneProgramContainer(
-                  //         favoriteTrainingPrograms: favoritePrograms,
-                  //         program: program,
-                  //         title: program.name,
-                  //         date:
-                  //             'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
-                  //         subtitle:
-                  //             '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
-                  //         difficulty: program.category,
-                  //       ),
-                  //     );
-                  //   },
-                  // ),
+                  ListView.builder(
+                    physics: NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: completedPrograms.length > 5
+                        ? 5
+                        : completedPrograms.length,
+                    itemBuilder: (context, index) {
+                      final program = completedPrograms[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: FullProgramContainerWidget(
+                          user: widget.patient,
+                          favoriteTrainingPrograms: favoritePrograms,
+                          program: program,
+                          title: program.name,
+                          isDone: false,
+                          viewMore: true,
+                          date:
+                          'Done in ${program.date.day} / ${program.date.month} / ${program.date.year}',
+                          subtitle:
+                          '${program.duration} MINS  ●  ${program.exercises.length} EXERCISES',
+                          difficulty: program.category,
+                          onFavoriteChanged: (String programId, bool isNowFavorite) {  },
+                        ),
+                      );
+                    },
+                  ),
                   if (completedPrograms.length > 5)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -369,12 +372,12 @@ class _EntireProgressTrackingScreenState
       case 0:
         return LastMonthTotalNumberByCategoryPieChart(
             completedPrograms: completedPrograms);
-      // case 1:
-      //   return LastWeekTotalNumberLineChart(
-      //       completedPrograms: completedPrograms);
-      // case 2:
-      //   return TrainingDurationStackedBarChart(
-      //       completedPrograms: completedPrograms);
+      case 1:
+        return LastWeekTotalNumberLineChart(
+            completedPrograms: completedPrograms);
+      case 2:
+        return TrainingDurationStackedBarChart(
+            completedPrograms: completedPrograms);
       default:
         return Container();
     }
